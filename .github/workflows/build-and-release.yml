@@ -7,12 +7,6 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      publish_release:
-        description: 'Publish as a public GitHub Release'
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -25,6 +19,7 @@ jobs:
   test:
     name: Test & Lint (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -45,12 +40,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0 libegl1 tesseract-ocr tesseract-ocr-eng
-
-      - name: Install system dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install tesseract
+          sudo apt-get install -y libgl1-mesa-dev libxkbcommon-x11-0 libegl1
 
       - name: Install Python dependencies
         run: |
@@ -79,6 +69,7 @@ jobs:
     needs: test
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -106,12 +97,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y binutils dpkg-dev libgl1-mesa-dev libxkbcommon-x11-0 libegl1 tesseract-ocr
-
-      - name: Install system dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install tesseract
+          sudo apt-get install -y binutils dpkg-dev libgl1-mesa-dev libxkbcommon-x11-0 libegl1
 
       - name: Install Inno Setup (Windows)
         if: runner.os == 'Windows'
@@ -199,13 +185,14 @@ jobs:
             dist/*.tar.gz
 
   # -------------------------------------------------------------
-  # Job 3: Publish GitHub Release
+  # Job 3: Attach Installers to GitHub Release (ONLY on Git Tag)
   # -------------------------------------------------------------
   publish-release:
-    name: Create GitHub Release
+    name: Attach Installers to Release
     needs: build-release
-    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish_release == true)
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -221,9 +208,10 @@ jobs:
           find . -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.deb" -o -name "*.zip" -o -name "*.tar.gz" \) -exec sha256sum {} + > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
-      - name: Create GitHub Release
+      - name: Upload Binaries to Tag Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: |
             release-artifacts/**/*.exe
             release-artifacts/**/*.dmg
