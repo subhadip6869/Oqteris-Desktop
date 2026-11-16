@@ -157,7 +157,8 @@ Rectangle {
         Rectangle {
             id: signatureStatusBar
             width: parent.width
-            height: 36
+            implicitHeight: 38
+            height: implicitHeight
             visible: pdfController.hasDocument && signatureController.hasSignatures
             color: signatureController.allValidAndTrusted
                 ? (appController.isDarkMode ? "#1B3320" : "#E8F5E9")
@@ -166,6 +167,7 @@ Rectangle {
             border.width: 1
 
             RowLayout {
+                id: statusRow
                 anchors.fill: parent
                 anchors.leftMargin: 12
                 anchors.rightMargin: 12
@@ -192,6 +194,7 @@ Rectangle {
                     }
 
                     Text {
+                        id: statusSummaryLabel
                         text: signatureController.statusSummary
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.DemiBold
@@ -200,17 +203,29 @@ Rectangle {
                             : (appController.isDarkMode ? "#FFE082" : "#B78103")
                         Layout.fillWidth: true
                         elide: Text.ElideRight
+
+                        ToolTip.visible: summaryMouse.containsMouse && statusSummaryLabel.truncated
+                        ToolTip.text: statusSummaryLabel.text
+                        ToolTip.delay: 300
+
+                        MouseArea {
+                            id: summaryMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            acceptedButtons: Qt.NoButton
+                        }
                     }
                 }
 
                 // Right: Action Buttons
                 RowLayout {
                     spacing: 8
+                    Layout.alignment: Qt.AlignVCenter
 
                     // "Trust Signer" shortcut button if untrusted
                     Rectangle {
-                        Layout.preferredWidth: trustSignerText.implicitWidth + 16
-                        Layout.preferredHeight: 24
+                        Layout.preferredWidth: trustSignerText.implicitWidth + 18
+                        Layout.preferredHeight: 26
                         radius: 3
                         visible: !signatureController.allValidAndTrusted && signatureController.signatureCount > 0
                         color: trustSignerMouse.containsMouse ? Theme.brandPrimaryHover : Theme.brandPrimary
@@ -240,7 +255,7 @@ Rectangle {
                     // "Signature Panel" button
                     Rectangle {
                         Layout.preferredWidth: sigPanelText.implicitWidth + 18
-                        Layout.preferredHeight: 24
+                        Layout.preferredHeight: 26
                         radius: 3
                         color: sigPanelMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
                         border.color: Theme.borderSubtle
@@ -273,8 +288,8 @@ Rectangle {
 
                     // "Validate All" button
                     Rectangle {
-                        Layout.preferredWidth: valAllText.implicitWidth + 16
-                        Layout.preferredHeight: 24
+                        Layout.preferredWidth: valAllText.implicitWidth + 18
+                        Layout.preferredHeight: 26
                         radius: 3
                         color: valAllMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
                         border.color: Theme.borderSubtle

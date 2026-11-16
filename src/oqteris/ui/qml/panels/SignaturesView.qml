@@ -250,18 +250,20 @@ Item {
                         font.weight: Font.DemiBold
                         color: Theme.textPrimary
                         Layout.fillWidth: true
-                        elide: Text.ElideRight
+                        wrapMode: Text.WrapAnywhere
                     }
 
                     // Metadata Rows (Date, Reason, Location)
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 2
+                        spacing: 3
 
                         Text {
                             text: "📅 Date: " + (modelData.signingTime || "Not specified")
                             font.pixelSize: 11
                             color: Theme.textSecondary
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
                             visible: modelData.signingTime !== ""
                         }
 
@@ -269,6 +271,8 @@ Item {
                             text: "📝 Reason: " + modelData.reason
                             font.pixelSize: 11
                             color: Theme.textSecondary
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
                             visible: modelData.reason !== ""
                         }
 
@@ -276,6 +280,8 @@ Item {
                             text: "📍 Location: " + modelData.location
                             font.pixelSize: 11
                             color: Theme.textSecondary
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
                             visible: modelData.location !== ""
                         }
                     }
@@ -289,35 +295,47 @@ Item {
                     // Verification Breakdown
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 2
+                        spacing: 4
 
-                        Row {
-                            spacing: 4
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+                            alignment: Qt.AlignTop
+
                             Text {
                                 text: modelData.docModified ? "✕" : "✓"
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                                 font.bold: true
                                 color: modelData.docModified ? Theme.statusError : Theme.statusSuccess
+                                Layout.alignment: Qt.AlignTop
                             }
                             Text {
                                 text: modelData.docModified ? "Document was modified after signing" : "Document has not been modified since signed"
-                                font.pixelSize: 10
+                                font.pixelSize: 11
                                 color: modelData.docModified ? Theme.statusError : Theme.textSecondary
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                         }
 
-                        Row {
-                            spacing: 4
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+                            alignment: Qt.AlignTop
+
                             Text {
                                 text: modelData.trustStatus === "trusted" ? "✓" : "⚠"
-                                font.pixelSize: 11
+                                font.pixelSize: 12
                                 font.bold: true
                                 color: modelData.trustStatus === "trusted" ? Theme.statusSuccess : Theme.statusWarning
+                                Layout.alignment: Qt.AlignTop
                             }
                             Text {
                                 text: modelData.trustStatus === "trusted" ? "Signer's identity is trusted" : "Signer's certificate is not in your trusted list"
-                                font.pixelSize: 10
+                                font.pixelSize: 11
                                 color: modelData.trustStatus === "trusted" ? Theme.statusSuccess : Theme.statusWarning
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                         }
                     }
@@ -326,12 +344,12 @@ Item {
                     RowLayout {
                         Layout.fillWidth: true
                         Layout.topMargin: 4
-                        spacing: 6
+                        spacing: 8
 
                         // Trust / Untrust Button
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 28
+                            Layout.preferredHeight: 30
                             radius: 4
                             color: modelData.trustStatus === "trusted"
                                 ? (cardTrustMouse.containsMouse ? Theme.buttonHover : "transparent")
@@ -372,8 +390,8 @@ Item {
 
                         // Certificate Details Button
                         Rectangle {
-                            Layout.preferredWidth: 64
-                            Layout.preferredHeight: 28
+                            Layout.preferredWidth: 72
+                            Layout.preferredHeight: 30
                             radius: 4
                             color: detMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
                             border.color: Theme.borderSubtle

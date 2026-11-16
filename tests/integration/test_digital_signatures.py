@@ -107,6 +107,12 @@ def test_signature_trust_and_revalidation_workflow(
     assert "Signed and all signatures are valid" in sig_ctrl.statusSummary
     sigs_after = sig_ctrl.documentSignatures
     assert sigs_after[0]["trustStatus"] == "trusted"
+    assert sig_ctrl.signaturesRevision > 1
+
+    page_sigs = sig_ctrl.getSignaturesForPage(0)
+    assert len(page_sigs) == 1
+    assert page_sigs[0]["trustStatus"] == "trusted"
+    assert page_sigs[0]["sigIndex"] == 0
 
     # 5. Untrust the certificate
     untrust_ok = sig_ctrl.untrustSignatureCertificate(0)

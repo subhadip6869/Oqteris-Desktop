@@ -4,10 +4,13 @@ import "../themes"
 
 Rectangle {
     id: root
-    width: 280
+    width: 320
     color: Theme.panelBackground
     border.color: Theme.borderSubtle
     border.width: 1
+
+    readonly property int minPanelWidth: 260
+    readonly property int maxPanelWidth: 500
 
     Row {
         anchors.fill: parent
@@ -87,6 +90,40 @@ Rectangle {
                         case "search": return "SearchView.qml"
                         default: return "ThumbnailsView.qml"
                     }
+                }
+            }
+        }
+    }
+
+    // Right Splitter Drag Handle for resizing panel
+    Rectangle {
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: 4
+        z: 10
+        color: resizeMouse.containsMouse || resizeMouse.pressed ? Theme.brandPrimary : "transparent"
+
+        MouseArea {
+            id: resizeMouse
+            anchors.fill: parent
+            anchors.leftMargin: -2
+            anchors.rightMargin: -2
+            hoverEnabled: true
+            cursorShape: Qt.SizeHorCursor
+            property int startX: 0
+            property int startWidth: 0
+
+            onPressed: (mouse) => {
+                startX = mouse.x
+                startWidth = root.width
+            }
+
+            onPositionChanged: (mouse) => {
+                if (pressed) {
+                    var delta = mouse.x - startX
+                    var newW = root.width + delta
+                    root.width = Math.max(root.minPanelWidth, Math.min(root.maxPanelWidth, newW))
                 }
             }
         }

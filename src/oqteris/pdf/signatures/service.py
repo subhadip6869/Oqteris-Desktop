@@ -151,9 +151,14 @@ class SignatureService:
             # Cryptographic validation
             status = validation.validate_pdf_signature(embedded_sig, val_context)
 
-            is_intact = status.intact
-            is_crypto_valid = status.valid
-            doc_modified = not bool(status.docmdp_ok)
+            is_intact = bool(status.intact)
+            doc_modified = not bool(status.docmdp_ok) or (
+                hasattr(status, "diff_result")
+                and status.diff_result is not None
+                and hasattr(status.diff_result, "modification_level")
+                and status.diff_result.modification_level.value > 0
+            )
+            is_crypto_valid = is_intact and not doc_modified
 
             # Signing time extraction
             if hasattr(status, "signer_reported_dt") and status.signer_reported_dt:
@@ -186,26 +191,31 @@ class SignatureService:
                 existing_trusted = self.cert_repo.find_by_fingerprint(sha256_fp)
                 is_explicitly_trusted = existing_trusted is not None and existing_trusted.is_trusted
 
-                # Trust status logic
+                # Trust status logic:
+                # 1. Cryptographic integrity must be intact and document unmodified
+                # 2. Check expiration
+                # 3. If trusted via CA chain or explicitly trusted in SQLite repository -> TRUSTED
+                # 4. Otherwise cryptographically intact but untrusted -> UNTRUSTED
                 is_trusted = False
-                if is_crypto_valid:
-                    if status.trusted or is_explicitly_trusted:
-                        trust_status = SignatureTrustStatus.TRUSTED
-                        is_trusted = True
-                        validation_msg = "Signature is valid and certificate is trusted."
-                    else:
-                        trust_status = SignatureTrustStatus.UNTRUSTED
-                        validation_msg = "Signature is cryptographically intact, but the signer's certificate is not trusted."
-                else:
+                if not is_crypto_valid:
                     trust_status = SignatureTrustStatus.INVALID
-                    validation_msg = "Signature cryptographic integrity verification failed."
-
-                if is_expired:
+                    if not is_intact:
+                        validation_msg = "Signature cryptographic integrity verification failed."
+                    elif doc_modified:
+                        validation_msg = "Document has been modified after signing."
+                    else:
+                        validation_msg = "Signature cryptographic integrity verification failed."
+                elif is_expired:
                     trust_status = SignatureTrustStatus.EXPIRED
-                    validation_msg += " (Certificate has expired)"
-
-                if doc_modified:
-                    validation_msg += " (Document has been modified after signing)"
+                    validation_msg = "Signature is intact, but the signer's certificate has expired."
+                elif status.trusted or is_explicitly_trusted:
+                    trust_status = SignatureTrustStatus.TRUSTED
+                    is_trusted = True
+                    validation_msg = "Signature is valid and certificate is trusted."
+                else:
+                    trust_status = SignatureTrustStatus.UNTRUSTED
+                    is_trusted = False
+                    validation_msg = "Signature is cryptographically intact, but the signer's certificate is not trusted."
 
                 cert_details = CertificateDetails(
                     common_name=subject_name,
@@ -222,6 +232,7 @@ class SignatureService:
                 )
             else:
                 validation_msg = "No embedded signing certificate found."
+                trust_status = SignatureTrustStatus.INVALID
 
         except Exception as e:
             logger.error("Error validating embedded signature: %s", e)

@@ -48,6 +48,7 @@ class SignatureController(QObject):
         self._sig_service = SignatureService(cert_repo=self._cert_repo)
 
         self._cached_signatures: list[SignatureInfo] = []
+        self._signatures_revision: int = 0
 
         # Automatically inspect signatures when documents are opened or changed
         self._pdf_controller.documentChanged.connect(self._on_document_changed)
@@ -57,6 +58,10 @@ class SignatureController(QObject):
         self.inspectSignatures()
 
     # --- QML Properties ---
+
+    @Property(int, notify=signaturesChanged)
+    def signaturesRevision(self) -> int:
+        return self._signatures_revision
 
     @Property("QVariantList", notify=signaturesChanged)
     def documentSignatures(self) -> list[dict[str, Any]]:
@@ -132,6 +137,7 @@ class SignatureController(QObject):
         doc = self._doc_manager.active_document
         if not doc or not doc.file_path or not doc.is_open:
             self._cached_signatures = []
+            self._signatures_revision += 1
             self.signaturesChanged.emit()
             return
 
@@ -141,6 +147,7 @@ class SignatureController(QObject):
             logger.error("Error inspecting signatures: %s", e)
             self._cached_signatures = []
 
+        self._signatures_revision += 1
         self.signaturesChanged.emit()
 
     @Slot(int, result=bool)
@@ -180,6 +187,7 @@ class SignatureController(QObject):
             logger.info("Added certificate '%s' to trusted roots", cert.common_name)
             self.certificatesChanged.emit()
             self.inspectSignatures()
+            self._pdf_controller.invalidateRender()
             self.statusMessageRequested.emit("Certificate Trusted", f"Added '{cert.common_name}' to trusted certificates. Signature validated successfully.")
             return True
         except Exception as e:
@@ -201,6 +209,7 @@ class SignatureController(QObject):
             self._cert_repo.set_trust(db_cert.id, False)
             self.certificatesChanged.emit()
             self.inspectSignatures()
+            self._pdf_controller.invalidateRender()
             self.statusMessageRequested.emit("Trust Removed", f"Removed trust for certificate '{sig.certificate.common_name}'.")
             return True
         return False
@@ -247,11 +256,13 @@ class SignatureController(QObject):
     @Slot(int, result="QVariantList")
     def getSignaturesForPage(self, page_index: int) -> list[dict[str, Any]]:
         """Return signatures placed on the specified zero-indexed page."""
-        return [
-            s.to_dict()
-            for s in self._cached_signatures
-            if s.page_number == page_index and s.norm_rect and len(s.norm_rect) == 4
-        ]
+        res: list[dict[str, Any]] = []
+        for i, s in enumerate(self._cached_signatures):
+            if s.page_number == page_index and s.norm_rect and len(s.norm_rect) == 4:
+                d = s.to_dict()
+                d["sigIndex"] = i
+                res.append(d)
+        return res
 
     @Slot(int, str, result=bool)
     def exportCertificate(self, sig_index: int, target_path: str) -> bool:
