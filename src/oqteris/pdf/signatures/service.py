@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from asn1crypto import x509
+import fitz  # PyMuPDF
+from asn1crypto import pem, x509
 from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
 from pyhanko.pdf_utils.reader import PdfFileReader
 from pyhanko.sign import fields, signers, validation
@@ -42,7 +43,12 @@ class SignatureService:
             for r in db_records:
                 if r.is_trusted and r.certificate_pem:
                     try:
-                        cert = x509.Certificate.load(r.certificate_pem.encode("utf-8"))
+                        raw_bytes = r.certificate_pem.encode("utf-8")
+                        if pem.detect(raw_bytes):
+                            _, _, der_bytes = pem.unarmor(raw_bytes)
+                        else:
+                            der_bytes = raw_bytes
+                        cert = x509.Certificate.load(der_bytes)
                         trusted_certs.append(cert)
                     except Exception as e:
                         logger.warning("Could not parse certificate %s: %s", r.common_name, e)
@@ -62,6 +68,29 @@ class SignatureService:
 
         results: list[SignatureInfo] = []
 
+        # Extract signature field locations and page numbers via PyMuPDF
+        field_locations: dict[str, dict[str, Any]] = {}
+        try:
+            doc_fitz = fitz.open(str(path))
+            for page_idx, page in enumerate(doc_fitz):
+                pw, ph = page.rect.width, page.rect.height
+                for widget in page.widgets():
+                    if widget.field_name:
+                        r = widget.rect
+                        field_locations[widget.field_name] = {
+                            "page": page_idx,
+                            "rect": [float(r.x0), float(r.y0), float(r.x1), float(r.y1)],
+                            "norm_rect": [
+                                float(r.x0 / pw) if pw > 0 else 0.0,
+                                float(r.y0 / ph) if ph > 0 else 0.0,
+                                float(r.width / pw) if pw > 0 else 0.0,
+                                float(r.height / ph) if ph > 0 else 0.0,
+                            ],
+                        }
+            doc_fitz.close()
+        except Exception as e:
+            logger.debug("Could not inspect widget positions: %s", e)
+
         try:
             with open(path, "rb") as f:
                 reader = PdfFileReader(f, strict=False)
@@ -80,6 +109,12 @@ class SignatureService:
                     field_name = embedded_sig.field_name or "Signature"
                     sig_info = self._validate_single_signature(embedded_sig, val_context)
                     sig_info.field_name = field_name
+
+                    loc = field_locations.get(field_name, {})
+                    sig_info.page_number = loc.get("page", 0)
+                    sig_info.rect = loc.get("rect", [0.0, 0.0, 0.0, 0.0])
+                    sig_info.norm_rect = loc.get("norm_rect", [0.0, 0.0, 0.0, 0.0])
+
                     results.append(sig_info)
 
         except Exception as e:
@@ -120,6 +155,13 @@ class SignatureService:
             is_crypto_valid = status.valid
             doc_modified = not bool(status.docmdp_ok)
 
+            # Signing time extraction
+            if hasattr(status, "signer_reported_dt") and status.signer_reported_dt:
+                signing_time = status.signer_reported_dt.strftime("%d-%b-%Y %H:%M:%S")
+            elif "/M" in sig_obj:
+                m_str = str(sig_obj.get("/M", ""))
+                signing_time = m_str.replace("D:", "").replace("'", "")
+
             # Certificate extraction
             signing_cert = status.signing_cert
             if signing_cert:
@@ -127,6 +169,7 @@ class SignatureService:
                 native_iss = signing_cert.issuer.native if hasattr(signing_cert.issuer, "native") else {}
                 subject_name = native_subj.get("common_name", signing_cert.subject.human_friendly)
                 issuer_name = native_iss.get("common_name", signing_cert.issuer.human_friendly)
+                org_name = native_subj.get("organization_name") or native_subj.get("organization") or ""
                 signer_name = subject_name
                 is_self_signed = signing_cert.self_signed == "yes"
 
@@ -137,16 +180,22 @@ class SignatureService:
                 now = datetime.now(timezone.utc)
                 is_expired = now > signing_cert.not_valid_after.replace(tzinfo=timezone.utc)
 
+                cert_pem = pem.armor("CERTIFICATE", signing_cert.dump()).decode("utf-8")
+
+                # Check if this certificate is already trusted in our SQLite repository
+                existing_trusted = self.cert_repo.find_by_fingerprint(sha256_fp)
+                is_explicitly_trusted = existing_trusted is not None and existing_trusted.is_trusted
+
                 # Trust status logic
                 is_trusted = False
                 if is_crypto_valid:
-                    if status.trusted:
+                    if status.trusted or is_explicitly_trusted:
                         trust_status = SignatureTrustStatus.TRUSTED
                         is_trusted = True
-                        validation_msg = "Signature is valid and certificate chain is trusted."
+                        validation_msg = "Signature is valid and certificate is trusted."
                     else:
                         trust_status = SignatureTrustStatus.UNTRUSTED
-                        validation_msg = "Signature is cryptographically intact, but the certificate is not trusted."
+                        validation_msg = "Signature is cryptographically intact, but the signer's certificate is not trusted."
                 else:
                     trust_status = SignatureTrustStatus.INVALID
                     validation_msg = "Signature cryptographic integrity verification failed."
@@ -160,6 +209,7 @@ class SignatureService:
 
                 cert_details = CertificateDetails(
                     common_name=subject_name,
+                    organization=org_name,
                     issuer=issuer_name,
                     serial_number=hex(signing_cert.serial_number),
                     fingerprint_sha256=sha256_fp,
@@ -168,6 +218,7 @@ class SignatureService:
                     is_self_signed=is_self_signed,
                     is_expired=is_expired,
                     is_trusted=is_trusted,
+                    raw_pem=cert_pem,
                 )
             else:
                 validation_msg = "No embedded signing certificate found."

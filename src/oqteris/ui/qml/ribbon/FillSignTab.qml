@@ -41,5 +41,25 @@ Row {
             enabled: pdfController.hasDocument
             onClicked: signDialogLoader.openSignDialog()
         }
+
+        OqRibbonButton {
+            text: "Signature Panel"
+            iconSymbol: "📋"
+            tooltipText: "Open Digital Signatures Panel"
+            enabled: pdfController.hasDocument
+            onClicked: {
+                signatureController.inspectSignatures()
+                mainPanelState.showLeftPanel = true
+                mainPanelState.currentPanelTab = "signatures"
+            }
+        }
+
+        OqRibbonButton {
+            text: "Validate All"
+            iconSymbol: "🛡"
+            tooltipText: "Validate All Digital Signatures"
+            enabled: pdfController.hasDocument
+            onClicked: signatureController.inspectSignatures()
+        }
     }
 }

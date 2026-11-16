@@ -202,9 +202,15 @@ ApplicationWindow {
     AboutDialog { id: aboutDlg }
     SettingsDialog { id: settingsDlg }
     SignDialog { id: signDlg }
+    CertificateDetailsDialog { id: certDetailsDlg }
     OcrDialog { id: ocrDlg }
     OptimizeDialog { id: optimizeDlg }
     PasswordDialog { id: passwordDlg }
+
+    QtObject {
+        id: certDetailsDialogLoader
+        function openCertificateDialog(sigIndex) { certDetailsDlg.openForSignature(sigIndex) }
+    }
 
     QtObject {
         id: aboutDialogLoader
@@ -245,6 +251,52 @@ ApplicationWindow {
             errorDlg.title = title
             errorText.text = message
             errorDlg.open()
+        }
+    }
+
+    Connections {
+        target: signatureController
+        function onStatusMessageRequested(title, message) {
+            infoDlg.title = title
+            infoText.text = message
+            infoDlg.open()
+        }
+    }
+
+    Dialog {
+        id: infoDlg
+        title: "Information"
+        modal: true
+        anchors.centerIn: parent
+        width: 380
+        height: 180
+
+        background: Rectangle {
+            color: Theme.cardBackground
+            border.color: Theme.brandPrimary
+            border.width: 1
+            radius: 6
+        }
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 12
+
+            Text {
+                id: infoText
+                text: ""
+                font.pixelSize: Theme.fontSizeNormal
+                color: Theme.textPrimary
+                wrapMode: Text.WordWrap
+                width: parent.width
+            }
+
+            Button {
+                text: "OK"
+                anchors.horizontalCenter: parent.horizontalCenter
+                onClicked: infoDlg.close()
+            }
         }
     }
 
@@ -308,6 +360,23 @@ ApplicationWindow {
         title: "Select PKCS#12 Certificate"
         nameFilters: ["PKCS#12 Certificates (*.p12 *.pfx)", "All Files (*.*)"]
         onAccepted: signDialogLoader.setCertPath(selectedFile.toString())
+    }
+
+    FileDialog {
+        id: exportCertDialog
+        title: "Export Signer Certificate"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["Certificate (*.cer *.crt *.pem)", "All Files (*.*)"]
+        defaultSuffix: "cer"
+        property int targetSigIndex: 0
+        onAccepted: signatureController.exportCertificate(targetSigIndex, selectedFile.toString())
+    }
+
+    FileDialog {
+        id: importCertDialog
+        title: "Import Trusted Certificate"
+        nameFilters: ["Certificate Files (*.cer *.crt *.pem)", "All Files (*.*)"]
+        onAccepted: signatureController.importCertificateFile(selectedFile.toString())
     }
 
     FileDialog {

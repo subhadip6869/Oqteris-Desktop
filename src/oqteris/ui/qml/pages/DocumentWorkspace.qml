@@ -153,11 +153,162 @@ Rectangle {
             }
         }
 
+        // Top: Signature Notification Status Bar
+        Rectangle {
+            id: signatureStatusBar
+            width: parent.width
+            height: 36
+            visible: pdfController.hasDocument && signatureController.hasSignatures
+            color: signatureController.allValidAndTrusted
+                ? (appController.isDarkMode ? "#1B3320" : "#E8F5E9")
+                : (appController.isDarkMode ? "#332B15" : "#FFF8E1")
+            border.color: signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning
+            border.width: 1
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                spacing: 10
+
+                // Left: Status Icon and Message
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    Rectangle {
+                        width: 22
+                        height: 22
+                        radius: 11
+                        color: signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: signatureController.allValidAndTrusted ? "✓" : "?"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#FFFFFF"
+                        }
+                    }
+
+                    Text {
+                        text: signatureController.statusSummary
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.DemiBold
+                        color: signatureController.allValidAndTrusted
+                            ? (appController.isDarkMode ? "#A5D6A7" : "#1B5E20")
+                            : (appController.isDarkMode ? "#FFE082" : "#B78103")
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                    }
+                }
+
+                // Right: Action Buttons
+                RowLayout {
+                    spacing: 8
+
+                    // "Trust Signer" shortcut button if untrusted
+                    Rectangle {
+                        Layout.preferredWidth: trustSignerText.implicitWidth + 16
+                        Layout.preferredHeight: 24
+                        radius: 3
+                        visible: !signatureController.allValidAndTrusted && signatureController.signatureCount > 0
+                        color: trustSignerMouse.containsMouse ? Theme.brandPrimaryHover : Theme.brandPrimary
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 4
+                            Text { text: "🛡"; font.pixelSize: 11; color: "#FFFFFF" }
+                            Text {
+                                id: trustSignerText
+                                text: "Trust Signer"
+                                font.pixelSize: 11
+                                font.bold: true
+                                color: "#FFFFFF"
+                            }
+                        }
+
+                        MouseArea {
+                            id: trustSignerMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: signatureController.trustSignatureCertificate(0)
+                        }
+                    }
+
+                    // "Signature Panel" button
+                    Rectangle {
+                        Layout.preferredWidth: sigPanelText.implicitWidth + 18
+                        Layout.preferredHeight: 24
+                        radius: 3
+                        color: sigPanelMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
+                        border.color: Theme.borderSubtle
+                        border.width: 1
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 4
+                            Text { text: "🔏"; font.pixelSize: 11 }
+                            Text {
+                                id: sigPanelText
+                                text: "Signature Panel"
+                                font.pixelSize: 11
+                                font.weight: Font.DemiBold
+                                color: Theme.textPrimary
+                            }
+                        }
+
+                        MouseArea {
+                            id: sigPanelMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                mainPanelState.showLeftPanel = true
+                                mainPanelState.currentPanelTab = "signatures"
+                            }
+                        }
+                    }
+
+                    // "Validate All" button
+                    Rectangle {
+                        Layout.preferredWidth: valAllText.implicitWidth + 16
+                        Layout.preferredHeight: 24
+                        radius: 3
+                        color: valAllMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
+                        border.color: Theme.borderSubtle
+                        border.width: 1
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 4
+                            Text { text: "🔄"; font.pixelSize: 10 }
+                            Text {
+                                id: valAllText
+                                text: "Validate All"
+                                font.pixelSize: 11
+                                color: Theme.textPrimary
+                            }
+                        }
+
+                        MouseArea {
+                            id: valAllMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: signatureController.inspectSignatures()
+                        }
+                    }
+                }
+            }
+        }
+
         // Center: Viewing Area or Welcome Screen
         Item {
             id: viewContainer
             width: parent.width
-            height: parent.height - (docTabBar.visible ? 32 : 0) - statusBar.height
+            height: parent.height - (docTabBar.visible ? 32 : 0) - (signatureStatusBar.visible ? 36 : 0) - statusBar.height
 
             // Welcome View (No document open)
             Item {

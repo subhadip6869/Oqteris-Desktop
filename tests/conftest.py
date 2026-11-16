@@ -20,6 +20,16 @@ from oqteris.config.settings import SettingsManager
 from oqteris.database.connection import DatabaseManager
 from oqteris.platform.storage import StorageManager
 from oqteris.repositories.recent_files_repo import RecentFilesRepository
+from PySide6.QtGui import QGuiApplication
+
+
+@pytest.fixture(scope="session")
+def qapp():
+    os.environ["QT_QPA_PLATFORM"] = "offscreen"
+    app = QGuiApplication.instance()
+    if app is None:
+        app = QGuiApplication([])
+    return app
 
 
 @pytest.fixture

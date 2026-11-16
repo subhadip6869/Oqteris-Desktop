@@ -44,6 +44,7 @@ class CertificateDetails:
             "isSelfSigned": self.is_self_signed,
             "isExpired": self.is_expired,
             "isTrusted": self.is_trusted,
+            "rawPem": self.raw_pem,
         }
 
 
@@ -64,6 +65,9 @@ class SignatureInfo:
     trust_status: SignatureTrustStatus = SignatureTrustStatus.UNKNOWN
     certificate: Optional[CertificateDetails] = None
     validation_message: str = ""
+    page_number: int = 0
+    rect: list[float] = field(default_factory=list)
+    norm_rect: list[float] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -80,4 +84,7 @@ class SignatureInfo:
             "trustStatus": self.trust_status.value,
             "certificate": self.certificate.to_dict() if self.certificate else None,
             "validationMessage": self.validation_message,
+            "pageNumber": self.page_number,
+            "rect": self.rect,
+            "normRect": self.norm_rect,
         }
