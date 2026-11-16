@@ -45,9 +45,11 @@ def run_nuitka_build() -> int:
             f"--windows-icon-from-ico={ASSETS_DIR / 'icons' / 'app' / 'oqteris-logo.ico'}",
         ])
     elif system == "Darwin":
+        icns_path = ASSETS_DIR / "icons" / "app" / "oqteris-logo.icns"
+        icon_arg = icns_path if icns_path.exists() else (ASSETS_DIR / "icons" / "app" / "oqteris-logo.png")
         cmd.extend([
             "--macos-create-app-bundle",
-            f"--macos-app-icon={ASSETS_DIR / 'icons' / 'app' / 'oqteris-logo.png'}",
+            f"--macos-app-icon={icon_arg}",
             "--macos-app-name=Oqteris",
         ])
     elif system == "Linux":

@@ -62,10 +62,10 @@ jobs:
           path: junit/test-results.xml
 
   # -------------------------------------------------------------
-  # Job 2: Build Native Installers & Standalone Packages
+  # Job 2: Build Native Installers
   # -------------------------------------------------------------
   build-release:
-    name: Build Packages (${{ matrix.target }})
+    name: Build Installers (${{ matrix.target }})
     needs: test
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
@@ -76,13 +76,13 @@ jobs:
         include:
           - os: windows-latest
             target: windows-x64
-            artifact-name: Oqteris-Windows-x64
+            artifact-name: Oqteris-Windows-Installer
           - os: macos-latest
             target: macos-arm64
-            artifact-name: Oqteris-macOS-arm64
+            artifact-name: Oqteris-macOS-Installer
           - os: ubuntu-latest
             target: linux-x64
-            artifact-name: Oqteris-Linux-x64
+            artifact-name: Oqteris-Linux-Installers
 
     steps:
       - name: Check out repository
@@ -97,7 +97,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y binutils dpkg-dev libgl1-mesa-dev libxkbcommon-x11-0 libegl1
+          sudo apt-get install -y binutils dpkg-dev rpm libgl1-mesa-dev libxkbcommon-x11-0 libegl1
 
       - name: Install Inno Setup (Windows)
         if: runner.os == 'Windows'
@@ -109,69 +109,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e .
-          pip install nuitka setuptools wheel zstandard
+          pip install nuitka setuptools wheel zstandard imageio pillow
 
-      # --- Windows: Executable Installer & Portable Zip ---
-      - name: Build Windows Installer (.exe) & Portable Zip (.zip)
+      # --- Windows: Inno Setup Installer (.exe) ---
+      - name: Build Windows Installer (.exe)
         if: runner.os == 'Windows'
-        run: |
-          python scripts/build_nuitka.py
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging/windows/setup.iss
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Compress-Archive -Path dist/Oqteris.dist/* -DestinationPath dist/Oqteris-1.0.0-Windows-x64-Portable.zip
+        shell: pwsh
+        run: ./scripts/build_windows.ps1
 
-      # --- macOS: DMG Drag-and-Drop Installer & App Bundle Zip ---
-      - name: Build macOS DMG Installer (.dmg) & Zip (.zip)
+      # --- macOS: DMG Disk Image Installer (.dmg) ---
+      - name: Build macOS Installer (.dmg)
         if: runner.os == 'macOS'
-        run: |
-          python scripts/build_nuitka.py
-          mkdir -p dist/dmg_staging
-          cp -r dist/Oqteris.app dist/dmg_staging/
-          ln -s /Applications dist/dmg_staging/Applications
-          hdiutil create -volname "Oqteris" -srcfolder dist/dmg_staging -ov -format UDZO dist/Oqteris-1.0.0-macOS-arm64.dmg
-          rm -rf dist/dmg_staging
-          ditto -c -k --sequesterRsrc --keepParent dist/Oqteris.app dist/Oqteris-1.0.0-macOS-arm64.zip
+        run: bash ./scripts/build_macos.sh
 
-      # --- Linux: Debian Package (.deb) & Portable Tarball (.tar.gz) ---
-      - name: Build Linux Debian Package (.deb) & Portable (.tar.gz)
+      # --- Linux: Debian (.deb) & Fedora/RHEL (.rpm) Installers ---
+      - name: Build Linux Installers (.deb, .rpm)
         if: runner.os == 'Linux'
-        run: |
-          python scripts/build_nuitka.py
-          mkdir -p deb-pkg/DEBIAN
-          mkdir -p deb-pkg/opt/oqteris
-          mkdir -p deb-pkg/usr/bin
-          mkdir -p deb-pkg/usr/share/applications
-          mkdir -p deb-pkg/usr/share/icons/hicolor/256x256/apps
-
-          cp -r dist/Oqteris.dist/* deb-pkg/opt/oqteris/
-          chmod +x deb-pkg/opt/oqteris/Oqteris*
-
-          cat << 'EOF' > deb-pkg/usr/bin/oqteris
-          #!/bin/sh
-          exec /opt/oqteris/Oqteris "$@"
-          EOF
-          chmod +x deb-pkg/usr/bin/oqteris
-
-          cp packaging/linux/app.vercel.originsd.oqteris.desktop deb-pkg/usr/share/applications/
-          cp assets/icons/app/oqteris-logo.png deb-pkg/usr/share/icons/hicolor/256x256/apps/app.vercel.originsd.oqteris.png
-
-          cat << 'EOF' > deb-pkg/DEBIAN/control
-          Package: oqteris
-          Version: 1.0.0
-          Section: office
-          Priority: optional
-          Architecture: amd64
-          Maintainer: Subhadip Dutta <subhadip6869@users.noreply.github.com>
-          Homepage: https://originsd.vercel.app
-          Description: Complete Cross-Platform PDF Reader and Editor
-           Oqteris is a dedicated desktop PDF reader, editor, annotator, and security
-           suite built with Python and Qt Quick/QML. Features high-performance rendering,
-           digital signatures validation, OCR recognition, and document optimization.
-          EOF
-
-          dpkg-deb --build deb-pkg dist/Oqteris-1.0.0-Linux-x64.deb
-          tar -czf dist/Oqteris-1.0.0-Linux-x64-Portable.tar.gz -C dist Oqteris.dist
+        run: bash ./scripts/build_linux.sh
 
       - name: Upload Platform Build Artifacts
         uses: actions/upload-artifact@v4
@@ -181,8 +135,7 @@ jobs:
             dist/*.exe
             dist/*.dmg
             dist/*.deb
-            dist/*.zip
-            dist/*.tar.gz
+            dist/*.rpm
 
   # -------------------------------------------------------------
   # Job 3: Attach Installers to GitHub Release (ONLY on Git Tag)
@@ -205,7 +158,7 @@ jobs:
       - name: Generate Checksums
         run: |
           cd release-artifacts
-          find . -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.deb" -o -name "*.zip" -o -name "*.tar.gz" \) -exec sha256sum {} + > SHA256SUMS.txt
+          find . -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.deb" -o -name "*.rpm" \) -exec sha256sum {} + > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Upload Binaries to Tag Release
@@ -216,8 +169,7 @@ jobs:
             release-artifacts/**/*.exe
             release-artifacts/**/*.dmg
             release-artifacts/**/*.deb
-            release-artifacts/**/*.zip
-            release-artifacts/**/*.tar.gz
+            release-artifacts/**/*.rpm
             release-artifacts/SHA256SUMS.txt
           generate_release_notes: true
           draft: false
