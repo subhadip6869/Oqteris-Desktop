@@ -1,0 +1,501 @@
+import QtQuick
+import QtQuick.Controls.Basic
+import QtQuick.Dialogs
+import "components"
+import "dialogs"
+import "panels"
+import "pages"
+import "ribbon"
+import "themes"
+
+ApplicationWindow {
+    id: mainWindow
+    visible: true
+    width: 1280
+    height: 820
+    minimumWidth: 800
+    minimumHeight: 600
+    color: Theme.windowBackground
+
+    title: pdfController.hasDocument ?
+        (pdfController.fileName + (pdfController.isModified ? " * - " : " - ") + appController.appDisplayName) :
+        appController.appDisplayName
+
+    // Global Panel State
+    QtObject {
+        id: mainPanelState
+        property bool showLeftPanel: false
+        property string currentPanelTab: "thumbnails"
+        property bool showRightPanel: false
+
+        function togglePanel(tabId) {
+            if (showLeftPanel && currentPanelTab === tabId) {
+                showLeftPanel = false
+            } else {
+                currentPanelTab = tabId
+                showLeftPanel = true
+            }
+        }
+    }
+
+    Column {
+        anchors.fill: parent
+
+        // 1. Quick-Access Toolbar & Window Header
+        Rectangle {
+            id: quickAccessBar
+            width: parent.width
+            height: 34
+            color: Theme.titleBarBackground
+            border.color: Theme.borderSubtle
+            border.width: 1
+
+            Row {
+                anchors.left: parent.left
+                anchors.leftMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 4
+
+                // App Brand Name & Icon
+                Row {
+                    spacing: 6
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        text: "🔷"
+                        font.pixelSize: 15
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: appController.appName
+                        font.bold: true
+                        font.pixelSize: 13
+                        font.family: Theme.fontFamily
+                        color: Theme.brandPrimary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                Rectangle { width: 1; height: 18; color: Theme.divider; anchors.verticalCenter: parent.verticalCenter }
+
+                // Quick Action Buttons
+                OqToolButton {
+                    iconSymbol: "📂"
+                    tooltipText: "Open Document"
+                    shortcutText: "Ctrl+O"
+                    onClicked: fileDialogLoader.openFile()
+                }
+
+                OqToolButton {
+                    iconSymbol: "💾"
+                    tooltipText: "Save Document"
+                    shortcutText: "Ctrl+S"
+                    enabled: pdfController.hasDocument && pdfController.isModified
+                    onClicked: pdfController.saveDocument()
+                }
+
+                OqToolButton {
+                    iconSymbol: "↩"
+                    tooltipText: "Undo"
+                    shortcutText: "Ctrl+Z"
+                    enabled: ribbonController.canUndo
+                    onClicked: ribbonController.undo()
+                }
+
+                OqToolButton {
+                    iconSymbol: "↪"
+                    tooltipText: "Redo"
+                    shortcutText: "Ctrl+Y"
+                    enabled: ribbonController.canRedo
+                    onClicked: ribbonController.redo()
+                }
+            }
+
+            // Right header shortcuts (Theme, Settings, About)
+            Row {
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 6
+
+                // Default Viewer Pill
+                Rectangle {
+                    width: defaultPillText.implicitWidth + 14
+                    height: 22
+                    radius: 11
+                    color: appController.isDefaultViewer ? Theme.statusSuccess : Theme.selectedBackground
+                    visible: !appController.isDefaultViewer
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        id: defaultPillText
+                        anchors.centerIn: parent
+                        text: "Set as Default PDF Viewer"
+                        font.pixelSize: 10
+                        color: Theme.brandPrimary
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: appController.requestMakeDefaultViewer()
+                    }
+                }
+
+                OqToolButton {
+                    iconSymbol: appController.isDarkMode ? "☀" : "🌙"
+                    tooltipText: "Toggle Theme"
+                    onClicked: appController.toggleTheme()
+                }
+
+                OqToolButton {
+                    iconSymbol: "⚙"
+                    tooltipText: "Settings"
+                    onClicked: settingsDialogLoader.openSettingsDialog()
+                }
+
+                OqToolButton {
+                    iconSymbol: "ℹ"
+                    tooltipText: "About Oqteris"
+                    onClicked: aboutDialogLoader.openAboutDialog()
+                }
+            }
+        }
+
+        // 2. Main Ribbon Bar
+        RibbonBar {
+            id: mainRibbon
+            width: parent.width
+        }
+
+        // 3. Central Application Workspace Area
+        Row {
+            width: parent.width
+            height: parent.height - quickAccessBar.height - mainRibbon.height
+
+            // Left Navigation Drawer
+            NavigationPanel {
+                id: leftPanel
+                height: parent.height
+                visible: mainPanelState.showLeftPanel
+            }
+
+            // Center Document Workspace
+            DocumentWorkspace {
+                id: documentWorkspace
+                width: parent.width - (leftPanel.visible ? leftPanel.width : 0) - (rightPanel.visible ? rightPanel.width : 0)
+                height: parent.height
+            }
+
+            // Right Properties Panel
+            PropertiesPanel {
+                id: rightPanel
+                height: parent.height
+                visible: mainPanelState.showRightPanel
+            }
+        }
+    }
+
+    // --- Dialog Loaders & Helpers ---
+
+    QtObject {
+        id: aboutDialogLoader
+        property var dlg: null
+        function openAboutDialog() {
+            if (!dlg) {
+                var comp = Qt.createComponent("dialogs/AboutDialog.qml")
+                dlg = comp.createObject(mainWindow)
+            }
+            dlg.open()
+        }
+    }
+
+    QtObject {
+        id: settingsDialogLoader
+        property var dlg: null
+        function openSettingsDialog() {
+            if (!dlg) {
+                var comp = Qt.createComponent("dialogs/SettingsDialog.qml")
+                dlg = comp.createObject(mainWindow)
+            }
+            dlg.open()
+        }
+    }
+
+    QtObject {
+        id: signDialogLoader
+        property var dlg: null
+        function openSignDialog() {
+            if (!dlg) {
+                var comp = Qt.createComponent("dialogs/SignDialog.qml")
+                dlg = comp.createObject(mainWindow)
+            }
+            dlg.open()
+        }
+        function setCertPath(path) { if (dlg) dlg.setCertPath(path) }
+        function setOutPath(path) { if (dlg) dlg.setOutPath(path) }
+    }
+
+    QtObject {
+        id: ocrDialogLoader
+        property var dlg: null
+        function openOcrDialog() {
+            if (!dlg) {
+                var comp = Qt.createComponent("dialogs/OcrDialog.qml")
+                dlg = comp.createObject(mainWindow)
+            }
+            dlg.open()
+        }
+        function setOutPath(path) { if (dlg) dlg.setOutPath(path) }
+    }
+
+    QtObject {
+        id: optimizeDialogLoader
+        property var dlg: null
+        function openOptimizeDialog() {
+            if (!dlg) {
+                var comp = Qt.createComponent("dialogs/OptimizeDialog.qml")
+                dlg = comp.createObject(mainWindow)
+            }
+            dlg.open()
+        }
+        function setOutPath(path) { if (dlg) dlg.setOutPath(path) }
+    }
+
+    // Password Dialog
+    PasswordDialog {
+        id: passwordDlg
+    }
+
+    Connections {
+        target: pdfController
+        function onPasswordPromptRequested(filePath) {
+            passwordDlg.targetFilePath = filePath
+            passwordDlg.open()
+        }
+        function onErrorOccurred(title, message) {
+            errorDlg.title = title
+            errorText.text = message
+            errorDlg.open()
+        }
+    }
+
+    Dialog {
+        id: errorDlg
+        title: "Error"
+        modal: true
+        anchors.centerIn: parent
+        width: 380
+        height: 180
+
+        background: Rectangle {
+            color: Theme.cardBackground
+            border.color: Theme.statusError
+            border.width: 1
+            radius: 6
+        }
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 12
+
+            Text {
+                id: errorText
+                text: ""
+                font.pixelSize: Theme.fontSizeNormal
+                color: Theme.textPrimary
+                wrapMode: Text.WordWrap
+                width: parent.width
+            }
+
+            Button {
+                text: "OK"
+                anchors.horizontalCenter: parent.horizontalCenter
+                onClicked: errorDlg.close()
+            }
+        }
+    }
+
+    // --- Native File Dialogs ---
+
+    FileDialog {
+        id: openPdfDialog
+        title: "Open PDF Document"
+        nameFilters: ["PDF Files (*.pdf)", "All Files (*.*)"]
+        onAccepted: pdfController.openDocument(selectedFile.toString())
+    }
+
+    FileDialog {
+        id: savePdfDialog
+        title: "Save PDF Document As"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["PDF Files (*.pdf)"]
+        defaultSuffix: "pdf"
+        onAccepted: pdfController.saveDocumentAs(selectedFile.toString())
+    }
+
+    FileDialog {
+        id: openCertDialog
+        title: "Select PKCS#12 Certificate"
+        nameFilters: ["PKCS#12 Certificates (*.p12 *.pfx)", "All Files (*.*)"]
+        onAccepted: signDialogLoader.setCertPath(selectedFile.toString())
+    }
+
+    FileDialog {
+        id: saveSignedDialog
+        title: "Save Signed PDF As"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["PDF Files (*.pdf)"]
+        defaultSuffix: "pdf"
+        onAccepted: signDialogLoader.setOutPath(selectedFile.toString())
+    }
+
+    FileDialog {
+        id: saveOcrDialog
+        title: "Save Searchable PDF As"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["PDF Files (*.pdf)"]
+        defaultSuffix: "pdf"
+        onAccepted: ocrDialogLoader.setOutPath(selectedFile.toString())
+    }
+
+    FileDialog {
+        id: saveOptDialog
+        title: "Save Compressed PDF As"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["PDF Files (*.pdf)"]
+        defaultSuffix: "pdf"
+        onAccepted: optimizeDialogLoader.setOutPath(selectedFile.toString())
+    }
+
+    FileDialog {
+        id: saveExtractDialog
+        title: "Save Extracted Page As"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["PDF Files (*.pdf)"]
+        defaultSuffix: "pdf"
+        onAccepted: organizeController.extractPages([pdfController.currentPage], selectedFile.toString())
+    }
+
+    FolderDialog {
+        id: splitFolderDialog
+        title: "Select Output Folder for Split PDFs"
+        onAccepted: organizeController.splitPdf(selectedFolder.toString(), 1)
+    }
+
+    FolderDialog {
+        id: exportImagesFolderDialog
+        title: "Select Output Folder for Page Images"
+        onAccepted: {
+            var doc = pdfController.filePath
+            if (doc) {
+                // Export pages as images
+            }
+        }
+    }
+
+    QtObject {
+        id: fileDialogLoader
+        function openFile() { openPdfDialog.open() }
+        function saveFileAs() { savePdfDialog.open() }
+        function openCertificate() { openCertDialog.open() }
+        function saveSignedFileAs() { saveSignedDialog.open() }
+        function saveOcrFileAs() { saveOcrDialog.open() }
+        function saveOptimizedFileAs() { saveOptDialog.open() }
+        function saveExtractedPage() { saveExtractDialog.open() }
+        function selectSplitOutputDir() { splitFolderDialog.open() }
+        function selectExportImagesDir() { exportImagesFolderDialog.open() }
+        function openPdfsToMerge() { openPdfDialog.open() }
+        function openImagesToConvert() { openPdfDialog.open() }
+        function openImageToInsert() { openPdfDialog.open() }
+    }
+
+    // --- Global Keyboard Shortcuts ---
+
+    Shortcut {
+        sequence: StandardKey.Open
+        onActivated: fileDialogLoader.openFile()
+    }
+
+    Shortcut {
+        sequence: StandardKey.Save
+        onActivated: {
+            if (pdfController.hasDocument) pdfController.saveDocument()
+        }
+    }
+
+    Shortcut {
+        sequence: StandardKey.SaveAs
+        onActivated: {
+            if (pdfController.hasDocument) fileDialogLoader.saveFileAs()
+        }
+    }
+
+    Shortcut {
+        sequence: StandardKey.Close
+        onActivated: {
+            if (pdfController.hasDocument) pdfController.closeDocument()
+        }
+    }
+
+    Shortcut {
+        sequence: StandardKey.Find
+        onActivated: {
+            mainPanelState.showLeftPanel = true
+            mainPanelState.currentPanelTab = "search"
+        }
+    }
+
+    Shortcut {
+        sequence: StandardKey.Undo
+        onActivated: ribbonController.undo()
+    }
+
+    Shortcut {
+        sequence: StandardKey.Redo
+        onActivated: ribbonController.redo()
+    }
+
+    Shortcut {
+        sequence: StandardKey.ZoomIn
+        onActivated: pdfController.zoomIn()
+    }
+
+    Shortcut {
+        sequence: StandardKey.ZoomOut
+        onActivated: pdfController.zoomOut()
+    }
+
+    Shortcut {
+        sequence: "Ctrl+0"
+        onActivated: pdfController.fitPage(documentWorkspace.viewportWidth, documentWorkspace.viewportHeight)
+    }
+
+    Shortcut {
+        sequence: "Ctrl+1"
+        onActivated: pdfController.actualSize()
+    }
+
+    Shortcut {
+        sequence: "Ctrl+2"
+        onActivated: pdfController.fitWidth(documentWorkspace.viewportWidth)
+    }
+
+    Shortcut {
+        sequence: "Ctrl+R"
+        onActivated: pdfController.rotatePage(90)
+    }
+
+    Shortcut {
+        sequence: StandardKey.FullScreen
+        onActivated: {
+            if (mainWindow.visibility === Window.FullScreen) {
+                mainWindow.showNormal()
+            } else {
+                mainWindow.showFullScreen()
+            }
+        }
+    }
+}

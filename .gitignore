@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Qt / QML
+*.qmlc
+*.jsc
+.qmake.stash
+
+# Pytest / Coverage / Tox
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Oqteris local runtime data (do not commit runtime logs/db/temp)
+oqteris.db
+*.log
+recovery/
+cache/
+temp/
+backups/
+ipc_requests/
+
+# Nuitka build artifacts
+*.dist/
+*.build/

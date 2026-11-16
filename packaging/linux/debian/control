@@ -1,0 +1,15 @@
+Source: oqteris
+Section: office
+Priority: optional
+Maintainer: Subhadip Dutta <subhadip6869@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), python3-all, python3-pip
+Standards-Version: 4.6.0
+Homepage: https://originsd.vercel.app
+
+Package: oqteris
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, libqt6quick6, libqt6gui6, libqt6core6, tesseract-ocr
+Description: Complete Cross-Platform PDF Reader and Editor
+ Oqteris is a dedicated desktop PDF reader, editor, annotator, and security
+ suite built with Python and Qt Quick/QML. Features high-performance rendering,
+ digital signatures validation, OCR recognition, and document optimization.

@@ -1,0 +1,24 @@
+# Maintainer: Subhadip Dutta <subhadip6869@users.noreply.github.com>
+pkgname=oqteris
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Complete Cross-Platform PDF Reader and Editor"
+arch=('x86_64')
+url="https://originsd.vercel.app"
+license=('Apache-2.0')
+depends=('qt6-base' 'qt6-declarative' 'tesseract')
+makedepends=('python-setuptools' 'python-pip')
+source=("https://github.com/subhadip6869/Oqteris-Desktop/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "Oqteris-Desktop-${pkgver}"
+    python scripts/build_nuitka.py
+}
+
+package() {
+    cd "Oqteris-Desktop-${pkgver}"
+    install -Dm755 dist/Oqteris "${pkgdir}/usr/bin/oqteris"
+    install -Dm644 packaging/linux/org.originsd.oqteris.desktop "${pkgdir}/usr/share/applications/org.originsd.oqteris.desktop"
+    install -Dm644 assets/icons/app/oqteris-logo.png "${pkgdir}/usr/share/icons/hicolor/scalable/apps/org.originsd.oqteris.png"
+}
