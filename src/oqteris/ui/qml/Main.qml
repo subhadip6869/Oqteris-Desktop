@@ -197,75 +197,42 @@ ApplicationWindow {
         }
     }
 
-    // --- Dialog Loaders & Helpers ---
+    // --- Dialogs ---
+
+    AboutDialog { id: aboutDlg }
+    SettingsDialog { id: settingsDlg }
+    SignDialog { id: signDlg }
+    OcrDialog { id: ocrDlg }
+    OptimizeDialog { id: optimizeDlg }
+    PasswordDialog { id: passwordDlg }
 
     QtObject {
         id: aboutDialogLoader
-        property var dlg: null
-        function openAboutDialog() {
-            if (!dlg) {
-                var comp = Qt.createComponent("dialogs/AboutDialog.qml")
-                dlg = comp.createObject(mainWindow)
-            }
-            dlg.open()
-        }
+        function openAboutDialog() { aboutDlg.open() }
     }
 
     QtObject {
         id: settingsDialogLoader
-        property var dlg: null
-        function openSettingsDialog() {
-            if (!dlg) {
-                var comp = Qt.createComponent("dialogs/SettingsDialog.qml")
-                dlg = comp.createObject(mainWindow)
-            }
-            dlg.open()
-        }
+        function openSettingsDialog() { settingsDlg.open() }
     }
 
     QtObject {
         id: signDialogLoader
-        property var dlg: null
-        function openSignDialog() {
-            if (!dlg) {
-                var comp = Qt.createComponent("dialogs/SignDialog.qml")
-                dlg = comp.createObject(mainWindow)
-            }
-            dlg.open()
-        }
-        function setCertPath(path) { if (dlg) dlg.setCertPath(path) }
-        function setOutPath(path) { if (dlg) dlg.setOutPath(path) }
+        function openSignDialog() { signDlg.open() }
+        function setCertPath(path) { signDlg.setCertPath(path) }
+        function setOutPath(path) { signDlg.setOutPath(path) }
     }
 
     QtObject {
         id: ocrDialogLoader
-        property var dlg: null
-        function openOcrDialog() {
-            if (!dlg) {
-                var comp = Qt.createComponent("dialogs/OcrDialog.qml")
-                dlg = comp.createObject(mainWindow)
-            }
-            dlg.open()
-        }
-        function setOutPath(path) { if (dlg) dlg.setOutPath(path) }
+        function openOcrDialog() { ocrDlg.open() }
+        function setOutPath(path) { ocrDlg.setOutPath(path) }
     }
 
     QtObject {
         id: optimizeDialogLoader
-        property var dlg: null
-        function openOptimizeDialog() {
-            if (!dlg) {
-                var comp = Qt.createComponent("dialogs/OptimizeDialog.qml")
-                dlg = comp.createObject(mainWindow)
-            }
-            dlg.open()
-        }
-        function setOutPath(path) { if (dlg) dlg.setOutPath(path) }
-    }
-
-    // Password Dialog
-    PasswordDialog {
-        id: passwordDlg
+        function openOptimizeDialog() { optimizeDlg.open() }
+        function setOutPath(path) { optimizeDlg.setOutPath(path) }
     }
 
     Connections {
@@ -415,33 +382,33 @@ ApplicationWindow {
     // --- Global Keyboard Shortcuts ---
 
     Shortcut {
-        sequence: StandardKey.Open
+        sequences: [ StandardKey.Open ]
         onActivated: fileDialogLoader.openFile()
     }
 
     Shortcut {
-        sequence: StandardKey.Save
+        sequences: [ StandardKey.Save ]
         onActivated: {
             if (pdfController.hasDocument) pdfController.saveDocument()
         }
     }
 
     Shortcut {
-        sequence: StandardKey.SaveAs
+        sequences: [ StandardKey.SaveAs ]
         onActivated: {
             if (pdfController.hasDocument) fileDialogLoader.saveFileAs()
         }
     }
 
     Shortcut {
-        sequence: StandardKey.Close
+        sequences: [ StandardKey.Close ]
         onActivated: {
             if (pdfController.hasDocument) pdfController.closeDocument()
         }
     }
 
     Shortcut {
-        sequence: StandardKey.Find
+        sequences: [ StandardKey.Find ]
         onActivated: {
             mainPanelState.showLeftPanel = true
             mainPanelState.currentPanelTab = "search"
@@ -449,47 +416,47 @@ ApplicationWindow {
     }
 
     Shortcut {
-        sequence: StandardKey.Undo
+        sequences: [ StandardKey.Undo ]
         onActivated: ribbonController.undo()
     }
 
     Shortcut {
-        sequence: StandardKey.Redo
+        sequences: [ StandardKey.Redo ]
         onActivated: ribbonController.redo()
     }
 
     Shortcut {
-        sequence: StandardKey.ZoomIn
+        sequences: [ StandardKey.ZoomIn ]
         onActivated: pdfController.zoomIn()
     }
 
     Shortcut {
-        sequence: StandardKey.ZoomOut
+        sequences: [ StandardKey.ZoomOut ]
         onActivated: pdfController.zoomOut()
     }
 
     Shortcut {
-        sequence: "Ctrl+0"
+        sequences: [ "Ctrl+0" ]
         onActivated: pdfController.fitPage(documentWorkspace.viewportWidth, documentWorkspace.viewportHeight)
     }
 
     Shortcut {
-        sequence: "Ctrl+1"
+        sequences: [ "Ctrl+1" ]
         onActivated: pdfController.actualSize()
     }
 
     Shortcut {
-        sequence: "Ctrl+2"
+        sequences: [ "Ctrl+2" ]
         onActivated: pdfController.fitWidth(documentWorkspace.viewportWidth)
     }
 
     Shortcut {
-        sequence: "Ctrl+R"
+        sequences: [ "Ctrl+R" ]
         onActivated: pdfController.rotatePage(90)
     }
 
     Shortcut {
-        sequence: StandardKey.FullScreen
+        sequences: [ StandardKey.FullScreen ]
         onActivated: {
             if (mainWindow.visibility === Window.FullScreen) {
                 mainWindow.showNormal()

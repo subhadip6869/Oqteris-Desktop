@@ -22,6 +22,7 @@ python scripts/build_nuitka.py
 ```
 
 The script configures Nuitka with:
+
 - `--standalone`
 - `--enable-plugin=pyside6`
 - `--include-package=oqteris`
@@ -47,6 +48,7 @@ To produce a single-file executable installer (`Oqteris-1.0.0-Windows-x64-Setup.
 4. The installer executable will be generated under `dist\installer\`.
 
 The installer automatically:
+
 - Registers the application under Windows Programs.
 - Configures `.pdf` file associations.
 - Assigns the dedicated PDF document icon (`oqteris-document.ico`).
@@ -57,16 +59,19 @@ The installer automatically:
 ## Linux Packaging
 
 ### Debian Package (.deb)
+
 ```bash
 dpkg-buildpackage -us -uc -b
 ```
 
 ### RPM Package (.rpm)
+
 ```bash
 rpmbuild -ba packaging/linux/rpm/oqteris.spec
 ```
 
 ### Arch Linux Package (.pkg.tar.zst)
+
 ```bash
 cd packaging/linux/arch
 makepkg -si
@@ -79,6 +84,7 @@ makepkg -si
 Nuitka produces an application bundle `dist/Oqteris.app`.
 
 To package into a distributable DMG:
+
 ```bash
 hdiutil create -volname "Oqteris" -srcfolder dist/Oqteris.app -ov -format UDZO dist/Oqteris-1.0.0-macOS.dmg
 ```

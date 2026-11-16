@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
+import platform
 from pathlib import Path
 from typing import Any, Optional
 
-from PySide6.QtCore import QObject, Property, Signal, Slot
+from PySide6.QtCore import QObject, Property, QUrl, Signal, Slot
 from PySide6.QtGui import QClipboard, QGuiApplication
 
 from oqteris.config.settings import get_settings_manager
@@ -186,10 +187,8 @@ class PDFController(QObject):
     def openDocument(self, file_path: str, password: str = "") -> bool:
         """Open a PDF document, handling passwords and errors."""
         # Normalize file URI if given as file:///...
-        if file_path.startswith("file:///"):
-            file_path = file_path[8:]
-            if platform.system() == "Windows" and file_path.startswith("/") and len(file_path) > 2 and file_path[2] == ":":
-                file_path = file_path[1:]
+        if file_path.startswith("file:"):
+            file_path = QUrl(file_path).toLocalFile()
 
         path = Path(file_path).resolve()
         if not path.is_file():
@@ -268,10 +267,8 @@ class PDFController(QObject):
         if not doc:
             return False
 
-        if target_path.startswith("file:///"):
-            target_path = target_path[8:]
-            if platform.system() == "Windows" and target_path.startswith("/") and len(target_path) > 2 and target_path[2] == ":":
-                target_path = target_path[1:]
+        if target_path.startswith("file:"):
+            target_path = QUrl(target_path).toLocalFile()
 
         try:
             doc.save(target_path=target_path)

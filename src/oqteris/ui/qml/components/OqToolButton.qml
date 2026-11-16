@@ -6,7 +6,6 @@ Item {
     id: root
 
     property string iconSymbol: ""
-    property bool enabled: true
     property string tooltipText: ""
     property string shortcutText: ""
 

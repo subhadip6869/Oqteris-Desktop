@@ -137,7 +137,6 @@ Dialog {
                     anchors.fill: parent
                     anchors.margins: 4
                     text: settingsController.tesseractPath
-                    placeholderText: "Auto-detected from PATH"
                     color: Theme.textPrimary
                     font.pixelSize: Theme.fontSizeSmall
                 }

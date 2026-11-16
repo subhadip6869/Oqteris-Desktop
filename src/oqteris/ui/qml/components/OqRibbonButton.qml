@@ -10,7 +10,6 @@ Item {
     property string iconSource: ""
     property bool isLarge: true
     property bool isChecked: false
-    property bool enabled: true
     property string tooltipText: ""
     property string shortcutText: ""
 
