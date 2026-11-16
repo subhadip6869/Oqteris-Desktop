@@ -9,7 +9,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = PROJECT_ROOT / "src"
 ASSETS_DIR = PROJECT_ROOT / "assets"
-MAIN_SCRIPT = SRC_DIR / "oqteris" / "__main__.py"
+MAIN_SCRIPT = PROJECT_ROOT / "run_app.py"
 
 
 def run_nuitka_build() -> int:
@@ -24,10 +24,10 @@ def run_nuitka_build() -> int:
         "--standalone",
         "--assume-yes-for-downloads",
         "--enable-plugin=pyside6",
+        "--include-qt-plugins=sensible,qml",
         "--include-package=oqteris",
         f"--include-data-dir={SRC_DIR / 'oqteris' / 'ui' / 'qml'}=oqteris/ui/qml",
         f"--include-data-dir={ASSETS_DIR}=assets",
-        "--follow-imports",
         f"--output-dir={output_dir}",
         "--output-filename=Oqteris",
         "--company-name=OriginSD",
@@ -58,29 +58,43 @@ def run_nuitka_build() -> int:
     cmd.append(str(MAIN_SCRIPT))
 
     print(f"Executing Nuitka build command:\n{' '.join(cmd)}\n")
-    ret = subprocess.call(cmd)
+
+    # Set PYTHONPATH to include src so Nuitka can always locate oqteris package
+    env = os.environ.copy()
+    current_pp = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = str(SRC_DIR) + (os.pathsep + current_pp if current_pp else "")
+
+    ret = subprocess.call(cmd, env=env)
     if ret != 0:
         return ret
 
-    # Normalize directory name to dist/Oqteris.dist if Nuitka created __main__.dist
-    main_dist = output_dir / "__main__.dist"
-    oqteris_dist = output_dir / "Oqteris.dist"
-    if main_dist.exists() and not oqteris_dist.exists():
-        print(f"Renaming {main_dist} to {oqteris_dist}")
-        main_dist.rename(oqteris_dist)
+    # Normalize directory name to dist/Oqteris.dist
+    candidate_dists = [
+        output_dir / "run_app.dist",
+        output_dir / "__main__.dist",
+    ]
+    target_dist = output_dir / "Oqteris.dist"
+
+    for cand in candidate_dists:
+        if cand.exists() and not target_dist.exists():
+            print(f"Renaming {cand} to {target_dist}")
+            cand.rename(target_dist)
+            break
 
     # Ensure executable name inside Oqteris.dist is Oqteris.exe / Oqteris
-    if oqteris_dist.exists():
+    if target_dist.exists():
         if system == "Windows":
-            main_exe = oqteris_dist / "__main__.exe"
-            oqteris_exe = oqteris_dist / "Oqteris.exe"
-            if main_exe.exists() and not oqteris_exe.exists():
-                main_exe.rename(oqteris_exe)
+            for name in ["run_app.exe", "__main__.exe"]:
+                old_exe = target_dist / name
+                oqteris_exe = target_dist / "Oqteris.exe"
+                if old_exe.exists() and not oqteris_exe.exists():
+                    old_exe.rename(oqteris_exe)
         else:
-            main_bin = oqteris_dist / "__main__.bin"
-            oqteris_bin = oqteris_dist / "Oqteris"
-            if main_bin.exists() and not oqteris_bin.exists():
-                main_bin.rename(oqteris_bin)
+            for name in ["run_app.bin", "__main__.bin", "run_app", "__main__"]:
+                old_bin = target_dist / name
+                oqteris_bin = target_dist / "Oqteris"
+                if old_bin.exists() and not oqteris_bin.exists():
+                    old_bin.rename(oqteris_bin)
 
     return 0
 
