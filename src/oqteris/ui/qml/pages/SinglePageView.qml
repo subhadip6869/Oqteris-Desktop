@@ -39,6 +39,8 @@ Flickable {
             fillMode: Image.PreserveAspectFit
             asynchronous: true
             cache: false
+            smooth: true
+            mipmap: true
             source: pdfController.hasDocument ?
                 ("image://pdf/" + pdfController.activeDocId + "/" + pdfController.currentPage +
                  "?zoom=" + pdfController.zoomLevel +

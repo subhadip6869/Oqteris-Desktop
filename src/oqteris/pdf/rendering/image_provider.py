@@ -70,7 +70,7 @@ class PDFPageImageProvider(QQuickImageProvider):
             if is_thumb:
                 # Fixed thumbnail resolution (e.g. 0.25 zoom)
                 thumb_zoom = float(query_params.get("zoom", ["0.2"])[0])
-                img = self._rasterizer.render_page_to_qimage(doc, page_index, zoom=thumb_zoom, rotation=rotation)
+                img = self._rasterizer.render_page_to_qimage(doc, page_index, zoom=thumb_zoom, rotation=rotation, dpi_scale=1.5)
             else:
                 img = self._rasterizer.render_page_to_qimage(doc, page_index, zoom=zoom, rotation=rotation)
 

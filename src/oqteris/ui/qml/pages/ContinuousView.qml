@@ -64,6 +64,8 @@ ListView {
                 fillMode: Image.PreserveAspectFit
                 asynchronous: true
                 cache: false
+                smooth: true
+                mipmap: true
                 source: pdfController.hasDocument ?
                     ("image://pdf/" + pdfController.activeDocId + "/" + index +
                      "?zoom=" + pdfController.zoomLevel +

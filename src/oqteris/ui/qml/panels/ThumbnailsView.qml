@@ -36,6 +36,8 @@ ListView {
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     cache: false
+                    smooth: true
+                    mipmap: true
                     source: pdfController.hasDocument ?
                         ("image://pdf/" + pdfController.activeDocId + "/" + index + "?thumb=1&v=" + pdfController.renderNonce) : ""
                 }
