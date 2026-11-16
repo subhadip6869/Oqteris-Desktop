@@ -23,6 +23,8 @@ def run_nuitka_build() -> int:
         "nuitka",
         "--standalone",
         "--assume-yes-for-downloads",
+        "--lto=no",
+        "--nofollow-import-to=pytest,unittest,setuptools,pip,IPython,tkinter",
         "--enable-plugin=pyside6",
         "--include-qt-plugins=sensible,qml",
         "--include-package=oqteris",

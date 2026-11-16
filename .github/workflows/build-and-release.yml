@@ -111,6 +111,18 @@ jobs:
           pip install -e .
           pip install nuitka setuptools wheel zstandard imageio pillow
 
+      # --- Cache Nuitka C Compiler Objects across workflow runs ---
+      - name: Cache Nuitka Build Objects
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/Nuitka
+            ~/Library/Caches/Nuitka
+            ~\AppData\Local\Nuitka\Nuitka\Cache
+          key: ${{ runner.os }}-nuitka-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-nuitka-
+
       # --- Windows: Inno Setup Installer (.exe) ---
       - name: Build Windows Installer (.exe)
         if: runner.os == 'Windows'
