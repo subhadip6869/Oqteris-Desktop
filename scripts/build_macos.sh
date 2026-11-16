@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # macOS Installer Build Script for Oqteris
-# Runs Nuitka compilation and packages Apple Disk Image (.dmg)
+# Runs PyInstaller packaging and packages Apple Disk Image (.dmg)
 
 set -euo pipefail
 
-echo "==> Compiling Oqteris macOS Application Bundle with Nuitka..."
-python scripts/build_nuitka.py
+echo "==> Packaging Oqteris macOS Application Bundle with PyInstaller..."
+python scripts/build_pyinstaller.py
 
 if [ ! -d "dist/Oqteris.app" ]; then
     echo "ERROR: Expected app bundle dist/Oqteris.app was not created!" >&2

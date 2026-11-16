@@ -1,12 +1,12 @@
 # Windows Installer Build Script for Oqteris
-# Runs Nuitka compilation and compiles Inno Setup installer
+# Runs PyInstaller packaging and compiles Inno Setup installer
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "==> Compiling Oqteris standalone executable with Nuitka..." -ForegroundColor Cyan
-python scripts/build_nuitka.py
+Write-Host "==> Packaging Oqteris standalone executable with PyInstaller..." -ForegroundColor Cyan
+python scripts/build_pyinstaller.py
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Nuitka compilation failed with exit code $LASTEXITCODE"
+    Write-Error "PyInstaller packaging failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE
 }
 

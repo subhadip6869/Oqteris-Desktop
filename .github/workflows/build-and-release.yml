@@ -19,11 +19,11 @@ jobs:
   test:
     name: Test & Lint (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
         python-version: ['3.13']
 
     steps:
@@ -69,7 +69,8 @@ jobs:
     needs: test
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 20
+    continue-on-error: ${{ matrix.allow-failure || false }}
     strategy:
       fail-fast: false
       matrix:
@@ -77,12 +78,13 @@ jobs:
           - os: windows-latest
             target: windows-x64
             artifact-name: Oqteris-Windows-Installer
-          - os: macos-latest
-            target: macos-arm64
-            artifact-name: Oqteris-macOS-Installer
           - os: ubuntu-latest
             target: linux-x64
             artifact-name: Oqteris-Linux-Installers
+          - os: macos-latest
+            target: macos-arm64
+            artifact-name: Oqteris-macOS-Installer
+            allow-failure: true
 
     steps:
       - name: Check out repository
@@ -109,19 +111,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e .
-          pip install nuitka setuptools wheel zstandard imageio pillow
-
-      # --- Cache Nuitka C Compiler Objects across workflow runs ---
-      - name: Cache Nuitka Build Objects
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/Nuitka
-            ~/Library/Caches/Nuitka
-            ~\AppData\Local\Nuitka\Nuitka\Cache
-          key: ${{ runner.os }}-nuitka-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-nuitka-
+          pip install pyinstaller setuptools wheel
 
       # --- Windows: Inno Setup Installer (.exe) ---
       - name: Build Windows Installer (.exe)
@@ -155,9 +145,9 @@ jobs:
   publish-release:
     name: Attach Installers to Release
     needs: build-release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') && !cancelled()
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

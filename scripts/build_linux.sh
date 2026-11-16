@@ -7,8 +7,8 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "==> Compiling Oqteris standalone executable with Nuitka..."
-python scripts/build_nuitka.py
+echo "==> Packaging Oqteris standalone executable with PyInstaller..."
+python scripts/build_pyinstaller.py
 
 if [ ! -d "dist/Oqteris.dist" ]; then
     echo "ERROR: Expected dist/Oqteris.dist directory was not created!" >&2

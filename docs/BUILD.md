@@ -5,12 +5,11 @@ This guide details how to build and package Oqteris into standalone native binar
 ## Requirements
 
 - Python 3.13 or newer
-- C/C++ compiler toolchain (Visual Studio Build Tools on Windows, Xcode CLI on macOS, GCC/Clang on Linux)
-- Nuitka (`pip install nuitka`)
+- PyInstaller (`pip install pyinstaller`)
 
-## Standalone Compilation with Nuitka
+## Standalone Packaging with PyInstaller
 
-Oqteris includes an automated build script: [`scripts/build_nuitka.py`](../scripts/build_nuitka.py).
+Oqteris includes an automated build script: [`scripts/build_pyinstaller.py`](../scripts/build_pyinstaller.py).
 
 ```bash
 # Activate virtual environment
@@ -18,18 +17,17 @@ Oqteris includes an automated build script: [`scripts/build_nuitka.py`](../scrip
 source .venv/bin/activate # Linux/macOS
 
 # Run the build script
-python scripts/build_nuitka.py
+python scripts/build_pyinstaller.py
 ```
 
-The script configures Nuitka with:
+The script configures PyInstaller using the project spec file [`packaging/pyinstaller/oqteris.spec`](../packaging/pyinstaller/oqteris.spec) with:
 
-- `--standalone`
-- `--enable-plugin=pyside6`
-- `--include-package=oqteris`
-- Data directories for QML files and icons
-- Platform-appropriate icons and GUI flags (`--windows-console-mode=disable`, `--macos-create-app-bundle`)
+- `--onedir` standalone bundle
+- PySide6 and QML plugins collection
+- Data directories for QML files and assets
+- Platform-appropriate icons and GUI flags
 
-Compiled artifacts will be located under `dist/Oqteris.dist/` (Windows/Linux) or `dist/Oqteris.app/` (macOS).
+Packaged artifacts will be located under `dist/Oqteris.dist/` (Windows/Linux) or `dist/Oqteris.app/` (macOS).
 
 ---
 
@@ -39,13 +37,13 @@ Compiled artifacts will be located under `dist/Oqteris.dist/` (Windows/Linux) or
 
 To produce a single-file executable installer (`Oqteris-1.0.0-Windows-x64-Setup.exe`):
 
-1. Compile the standalone distribution via `python scripts/build_nuitka.py`.
+1. Package the standalone distribution via `python scripts/build_pyinstaller.py` or `powershell ./scripts/build_windows.ps1`.
 2. Install [Inno Setup 6](https://jrsoftware.org/isdl.php).
 3. Compile the setup script:
    ```cmd
    iscc packaging\windows\setup.iss
    ```
-4. The installer executable will be generated under `dist\installer\`.
+4. The installer executable will be generated under `dist\`.
 
 The installer automatically:
 
