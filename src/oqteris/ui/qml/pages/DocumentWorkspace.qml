@@ -35,17 +35,43 @@ Rectangle {
 
                     Rectangle {
                         id: tabItem
-                        width: Math.min(180, tabTitle.implicitWidth + 40)
+                        width: Math.min(220, Math.max(90, tabTitle.implicitWidth + 56))
                         height: 28
                         radius: 3
-                        color: modelData.isActive ? Theme.workspaceBackground : (tabMouse.containsMouse ? Theme.buttonHover : "transparent")
-                        border.color: modelData.isActive ? Theme.brandPrimary : "transparent"
+                        color: (modelData.isActive === true || modelData.isActive === "True")
+                            ? Theme.workspaceBackground
+                            : (tabMouse.containsMouse ? Theme.buttonHover : "transparent")
+                        border.color: (modelData.isActive === true || modelData.isActive === "True")
+                            ? Theme.brandPrimary
+                            : "transparent"
                         border.width: 1
 
+                        // 1. Tab Body Click Area (Switch Tab on Left Click, Close on Middle Click)
+                        MouseArea {
+                            id: tabMouse
+                            anchors.left: parent.left
+                            anchors.right: closeBtnRect.left
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.MiddleButton) {
+                                    pdfController.closeDocument(modelData.docId)
+                                } else {
+                                    pdfController.switchTab(modelData.docId)
+                                }
+                            }
+                        }
+
+                        // 2. Tab Icon and Title
                         Row {
-                            anchors.fill: parent
+                            anchors.left: parent.left
                             anchors.leftMargin: 8
-                            anchors.rightMargin: 6
+                            anchors.right: closeBtnRect.left
+                            anchors.rightMargin: 4
+                            anchors.verticalCenter: parent.verticalCenter
                             spacing: 6
 
                             Text {
@@ -56,47 +82,47 @@ Rectangle {
 
                             Text {
                                 id: tabTitle
-                                text: modelData.fileName + (modelData.isModified === "True" ? " *" : "")
+                                text: modelData.fileName + ((modelData.isModified === true || modelData.isModified === "True") ? " *" : "")
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.family: Theme.fontFamily
-                                font.weight: modelData.isActive ? Font.DemiBold : Font.Normal
+                                font.weight: (modelData.isActive === true || modelData.isActive === "True") ? Font.DemiBold : Font.Normal
                                 color: Theme.textPrimary
                                 elide: Text.ElideMiddle
-                                width: parent.width - 36
+                                width: parent.width - 20
                                 anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            // Close Tab Button
-                            Rectangle {
-                                width: 16
-                                height: 16
-                                radius: 2
-                                color: closeMouse.containsMouse ? Theme.buttonPressed : "transparent"
-                                anchors.verticalCenter: parent.verticalCenter
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "✕"
-                                    font.pixelSize: 9
-                                    color: Theme.textSecondary
-                                }
-
-                                MouseArea {
-                                    id: closeMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: pdfController.closeDocument(modelData.docId)
-                                }
                             }
                         }
 
-                        MouseArea {
-                            id: tabMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: pdfController.switchTab(modelData.docId)
+                        // 3. Dedicated Close Tab Button
+                        Rectangle {
+                            id: closeBtnRect
+                            width: 18
+                            height: 18
+                            anchors.right: parent.right
+                            anchors.rightMargin: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            radius: 3
+                            z: 2
+                            color: closeMouse.containsMouse ? Theme.buttonPressed : "transparent"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✕"
+                                font.pixelSize: 9
+                                font.bold: true
+                                color: closeMouse.containsMouse ? Theme.brandPrimary : Theme.textSecondary
+                            }
+
+                            MouseArea {
+                                id: closeMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: (mouse) => {
+                                    mouse.accepted = true
+                                    pdfController.closeDocument(modelData.docId)
+                                }
+                            }
                         }
                     }
                 }

@@ -228,13 +228,17 @@ class PDFController(QObject):
         if not target_id:
             return
 
+        was_active = (target_id == self.activeDocId)
+
         if self._image_provider:
             self._image_provider.cache.invalidate_document(target_id)
 
         self._doc_manager.close_document(target_id)
-        self._current_page = 0
+        if was_active:
+            self._current_page = 0
+            self.pageChanged.emit(0)
+
         self.documentChanged.emit()
-        self.pageChanged.emit(0)
         self.tabsChanged.emit()
         self.tocChanged.emit()
 

@@ -76,7 +76,7 @@ class DocumentManager:
         self._documents.clear()
         self._active_doc_id = None
 
-    def list_open_documents(self) -> list[dict[str, str]]:
+    def list_open_documents(self) -> list[dict[str, Any]]:
         """List open documents summary."""
         items = []
         for doc_id, doc in self._documents.items():
@@ -84,9 +84,9 @@ class DocumentManager:
                 "docId": doc_id,
                 "filePath": str(doc.file_path) if doc.file_path else "",
                 "fileName": doc.file_path.name if doc.file_path else "Untitled",
-                "pageCount": str(doc.page_count),
-                "isModified": str(doc.is_modified),
-                "isActive": str(doc_id == self._active_doc_id),
+                "pageCount": doc.page_count,
+                "isModified": doc.is_modified,
+                "isActive": (doc_id == self._active_doc_id),
             })
         return items
 

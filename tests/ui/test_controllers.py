@@ -65,6 +65,50 @@ def test_pdf_controller_workflow(qapp, sample_pdf_normal: Path):
     assert pdf_ctrl.hasDocument is False
 
 
+def test_pdf_controller_multi_tabs_and_close(qapp, temp_dir: Path, sample_pdf_normal: Path):
+    import pymupdf
+
+    second_pdf = temp_dir / "sample_second.pdf"
+    doc2 = pymupdf.open()
+    doc2.new_page(width=595, height=842)
+    doc2.save(str(second_pdf))
+    doc2.close()
+
+    app_ctrl = AppController()
+    pdf_ctrl = PDFController(app_controller=app_ctrl)
+
+    # 1. Open first document
+    pdf_ctrl.openDocument(str(sample_pdf_normal))
+    tabs = pdf_ctrl.openTabs
+    assert len(tabs) == 1
+    doc1_id = tabs[0]["docId"]
+    assert tabs[0]["isActive"] is True
+
+    # 2. Open second document
+    pdf_ctrl.openDocument(str(second_pdf))
+    tabs = pdf_ctrl.openTabs
+    assert len(tabs) == 2
+    doc2_id = pdf_ctrl.activeDocId
+    assert doc2_id != doc1_id
+
+    # 3. Switch tab back to first document
+    pdf_ctrl.switchTab(doc1_id)
+    assert pdf_ctrl.activeDocId == doc1_id
+
+    # 4. Close the inactive tab (doc2) by docId
+    pdf_ctrl.closeDocument(doc2_id)
+    tabs = pdf_ctrl.openTabs
+    assert len(tabs) == 1
+    assert tabs[0]["docId"] == doc1_id
+    assert pdf_ctrl.activeDocId == doc1_id
+    assert pdf_ctrl.hasDocument is True
+
+    # 5. Close the active tab (doc1) by docId
+    pdf_ctrl.closeDocument(doc1_id)
+    assert len(pdf_ctrl.openTabs) == 0
+    assert pdf_ctrl.hasDocument is False
+
+
 def test_ribbon_controller(qapp):
     ribbon = RibbonController()
     assert ribbon.currentTab == "Home"
