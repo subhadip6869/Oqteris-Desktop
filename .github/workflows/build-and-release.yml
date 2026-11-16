@@ -7,6 +7,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Publish as a public GitHub Release'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -66,12 +72,12 @@ jobs:
           path: junit/test-results.xml
 
   # -------------------------------------------------------------
-  # Job 2: Build Release Artifacts (Runs on Tag or Manual Dispatch)
+  # Job 2: Build Native Installers & Standalone Packages
   # -------------------------------------------------------------
   build-release:
-    name: Build Packages
+    name: Build Packages (${{ matrix.target }})
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -96,36 +102,98 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install build dependencies
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils dpkg-dev libgl1-mesa-dev libxkbcommon-x11-0 libegl1 tesseract-ocr
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install tesseract
+
+      - name: Install Inno Setup (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install innosetup --no-progress
+
+      - name: Install Python build dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install nuitka setuptools wheel
 
-      - name: Build Windows Standalone Package
+      # --- Windows: Executable Installer & Portable Zip ---
+      - name: Build Windows Installer (.exe) & Portable Zip (.zip)
         if: runner.os == 'Windows'
         run: |
           python scripts/build_nuitka.py
-          Compress-Archive -Path dist/Oqteris.dist/* -DestinationPath dist/Oqteris-1.0.0-Windows-x64.zip
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging/windows/setup.iss
+          Compress-Archive -Path dist/Oqteris.dist/* -DestinationPath dist/Oqteris-1.0.0-Windows-x64-Portable.zip
 
-      - name: Build macOS Application Bundle
+      # --- macOS: DMG Drag-and-Drop Installer & App Bundle Zip ---
+      - name: Build macOS DMG Installer (.dmg) & Zip (.zip)
         if: runner.os == 'macOS'
         run: |
           python scripts/build_nuitka.py
-          tar -czf dist/Oqteris-1.0.0-macOS-arm64.tar.gz -C dist Oqteris.app
+          mkdir -p dist/dmg_staging
+          cp -r dist/Oqteris.app dist/dmg_staging/
+          ln -s /Applications dist/dmg_staging/Applications
+          hdiutil create -volname "Oqteris" -srcfolder dist/dmg_staging -ov -format UDZO dist/Oqteris-1.0.0-macOS-arm64.dmg
+          rm -rf dist/dmg_staging
+          ditto -c -k --sequesterRsrc --keepParent dist/Oqteris.app dist/Oqteris-1.0.0-macOS-arm64.zip
 
-      - name: Build Linux Standalone & Debian Package
+      # --- Linux: Debian Package (.deb) & Portable Tarball (.tar.gz) ---
+      - name: Build Linux Debian Package (.deb) & Portable (.tar.gz)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y binutils dpkg-dev
           python scripts/build_nuitka.py
-          tar -czf dist/Oqteris-1.0.0-Linux-x64.tar.gz -C dist Oqteris.dist
+          mkdir -p deb-pkg/DEBIAN
+          mkdir -p deb-pkg/opt/oqteris
+          mkdir -p deb-pkg/usr/bin
+          mkdir -p deb-pkg/usr/share/applications
+          mkdir -p deb-pkg/usr/share/icons/hicolor/256x256/apps
+
+          cp -r dist/Oqteris.dist/* deb-pkg/opt/oqteris/
+          chmod +x deb-pkg/opt/oqteris/Oqteris*
+
+          cat << 'EOF' > deb-pkg/usr/bin/oqteris
+          #!/bin/sh
+          exec /opt/oqteris/Oqteris "$@"
+          EOF
+          chmod +x deb-pkg/usr/bin/oqteris
+
+          cp packaging/linux/org.originsd.oqteris.desktop deb-pkg/usr/share/applications/
+          cp assets/icons/app/oqteris-logo.png deb-pkg/usr/share/icons/hicolor/256x256/apps/org.originsd.oqteris.png
+
+          cat << 'EOF' > deb-pkg/DEBIAN/control
+          Package: oqteris
+          Version: 1.0.0
+          Section: office
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Subhadip Dutta <subhadip6869@users.noreply.github.com>
+          Homepage: https://originsd.vercel.app
+          Description: Complete Cross-Platform PDF Reader and Editor
+           Oqteris is a dedicated desktop PDF reader, editor, annotator, and security
+           suite built with Python and Qt Quick/QML. Features high-performance rendering,
+           digital signatures validation, OCR recognition, and document optimization.
+          EOF
+
+          dpkg-deb --build deb-pkg dist/Oqteris-1.0.0-Linux-x64.deb
+          tar -czf dist/Oqteris-1.0.0-Linux-x64-Portable.tar.gz -C dist Oqteris.dist
 
       - name: Upload Platform Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: dist/Oqteris-1.0.0-*
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.deb
+            dist/*.zip
+            dist/*.tar.gz
 
   # -------------------------------------------------------------
   # Job 3: Publish GitHub Release
@@ -133,7 +201,7 @@ jobs:
   publish-release:
     name: Create GitHub Release
     needs: build-release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish_release == true)
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -147,14 +215,18 @@ jobs:
       - name: Generate Checksums
         run: |
           cd release-artifacts
-          find . -type f -name "Oqteris-*" -exec sha256sum {} + > SHA256SUMS.txt
+          find . -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.deb" -o -name "*.zip" -o -name "*.tar.gz" \) -exec sha256sum {} + > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release-artifacts/**/Oqteris-1.0.0-*
+            release-artifacts/**/*.exe
+            release-artifacts/**/*.dmg
+            release-artifacts/**/*.deb
+            release-artifacts/**/*.zip
+            release-artifacts/**/*.tar.gz
             release-artifacts/SHA256SUMS.txt
           generate_release_notes: true
           draft: false

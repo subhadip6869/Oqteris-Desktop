@@ -22,6 +22,7 @@ def run_nuitka_build() -> int:
         "-m",
         "nuitka",
         "--standalone",
+        "--assume-yes-for-downloads",
         "--enable-plugin=pyside6",
         "--include-package=oqteris",
         f"--include-data-dir={SRC_DIR / 'oqteris' / 'ui' / 'qml'}=oqteris/ui/qml",
@@ -57,7 +58,31 @@ def run_nuitka_build() -> int:
     cmd.append(str(MAIN_SCRIPT))
 
     print(f"Executing Nuitka build command:\n{' '.join(cmd)}\n")
-    return subprocess.call(cmd)
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        return ret
+
+    # Normalize directory name to dist/Oqteris.dist if Nuitka created __main__.dist
+    main_dist = output_dir / "__main__.dist"
+    oqteris_dist = output_dir / "Oqteris.dist"
+    if main_dist.exists() and not oqteris_dist.exists():
+        print(f"Renaming {main_dist} to {oqteris_dist}")
+        main_dist.rename(oqteris_dist)
+
+    # Ensure executable name inside Oqteris.dist is Oqteris.exe / Oqteris
+    if oqteris_dist.exists():
+        if system == "Windows":
+            main_exe = oqteris_dist / "__main__.exe"
+            oqteris_exe = oqteris_dist / "Oqteris.exe"
+            if main_exe.exists() and not oqteris_exe.exists():
+                main_exe.rename(oqteris_exe)
+        else:
+            main_bin = oqteris_dist / "__main__.bin"
+            oqteris_bin = oqteris_dist / "Oqteris"
+            if main_bin.exists() and not oqteris_bin.exists():
+                main_bin.rename(oqteris_bin)
+
+    return 0
 
 
 if __name__ == "__main__":
