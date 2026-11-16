@@ -9,7 +9,7 @@
     <key>CFBundleIconFile</key>
     <string>Oqteris.icns</string>
     <key>CFBundleIdentifier</key>
-    <string>org.originsd.oqteris</string>
+    <string>app.vercel.originsd.oqteris</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>

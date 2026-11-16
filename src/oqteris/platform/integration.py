@@ -106,7 +106,7 @@ class PlatformIntegration:
             return False
 
     def _set_default_linux(self) -> bool:
-        """Set xdg-mime default org.originsd.oqteris.desktop application/pdf."""
+        """Set xdg-mime default app.vercel.originsd.oqteris.desktop application/pdf."""
         desktop_file = f"{APP_IDENTIFIER}.desktop"
         try:
             ret = subprocess.call(

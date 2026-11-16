@@ -19,6 +19,6 @@ build() {
 package() {
     cd "Oqteris-Desktop-${pkgver}"
     install -Dm755 dist/Oqteris "${pkgdir}/usr/bin/oqteris"
-    install -Dm644 packaging/linux/org.originsd.oqteris.desktop "${pkgdir}/usr/share/applications/org.originsd.oqteris.desktop"
-    install -Dm644 assets/icons/app/oqteris-logo.png "${pkgdir}/usr/share/icons/hicolor/scalable/apps/org.originsd.oqteris.png"
+    install -Dm644 packaging/linux/app.vercel.originsd.oqteris.desktop "${pkgdir}/usr/share/applications/app.vercel.originsd.oqteris.desktop"
+    install -Dm644 assets/icons/app/oqteris-logo.png "${pkgdir}/usr/share/icons/hicolor/scalable/apps/app.vercel.originsd.oqteris.png"
 }

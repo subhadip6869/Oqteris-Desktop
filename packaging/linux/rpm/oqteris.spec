@@ -24,10 +24,10 @@ mkdir -p %{buildroot}/usr/bin
 mkdir -p %{buildroot}/usr/share/applications
 mkdir -p %{buildroot}/usr/share/icons/hicolor/scalable/apps
 install -m 755 dist/Oqteris %{buildroot}/usr/bin/oqteris
-install -m 644 packaging/linux/org.originsd.oqteris.desktop %{buildroot}/usr/share/applications/
-install -m 644 assets/icons/app/oqteris-logo.png %{buildroot}/usr/share/icons/hicolor/scalable/apps/org.originsd.oqteris.png
+install -m 644 packaging/linux/app.vercel.originsd.oqteris.desktop %{buildroot}/usr/share/applications/
+install -m 644 assets/icons/app/oqteris-logo.png %{buildroot}/usr/share/icons/hicolor/scalable/apps/app.vercel.originsd.oqteris.png
 
 %files
 /usr/bin/oqteris
-/usr/share/applications/org.originsd.oqteris.desktop
-/usr/share/icons/hicolor/scalable/apps/org.originsd.oqteris.png
+/usr/share/applications/app.vercel.originsd.oqteris.desktop
+/usr/share/icons/hicolor/scalable/apps/app.vercel.originsd.oqteris.png

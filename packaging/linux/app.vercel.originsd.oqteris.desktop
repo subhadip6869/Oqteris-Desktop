@@ -3,13 +3,13 @@ Name=Oqteris
 GenericName=PDF Reader and Editor
 Comment=Professional cross-platform desktop PDF reader and editor
 Exec=oqteris %U
-Icon=org.originsd.oqteris
+Icon=app.vercel.originsd.oqteris
 Terminal=false
 Type=Application
 Categories=Office;Viewer;Graphics;Publishing;
 MimeType=application/pdf;application/x-pdf;
 StartupNotify=true
-StartupWMClass=org.originsd.oqteris
+StartupWMClass=app.vercel.originsd.oqteris
 Keywords=pdf;reader;editor;viewer;annotate;sign;ocr;
 Actions=NewWindow;
 

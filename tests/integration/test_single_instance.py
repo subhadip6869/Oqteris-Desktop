@@ -19,7 +19,7 @@ def qcore_app():
 
 
 def test_single_instance_startup(qcore_app, temp_dir: Path):
-    coordinator = SingleInstanceCoordinator(app_id="org.originsd.oqteris.test")
+    coordinator = SingleInstanceCoordinator(app_id="app.vercel.originsd.oqteris.test")
     # First launch should be primary
     is_primary = coordinator.handle_startup([])
     assert is_primary is True

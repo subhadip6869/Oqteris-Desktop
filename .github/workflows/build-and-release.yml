@@ -164,8 +164,8 @@ jobs:
           EOF
           chmod +x deb-pkg/usr/bin/oqteris
 
-          cp packaging/linux/org.originsd.oqteris.desktop deb-pkg/usr/share/applications/
-          cp assets/icons/app/oqteris-logo.png deb-pkg/usr/share/icons/hicolor/256x256/apps/org.originsd.oqteris.png
+          cp packaging/linux/app.vercel.originsd.oqteris.desktop deb-pkg/usr/share/applications/
+          cp assets/icons/app/oqteris-logo.png deb-pkg/usr/share/icons/hicolor/256x256/apps/app.vercel.originsd.oqteris.png
 
           cat << 'EOF' > deb-pkg/DEBIAN/control
           Package: oqteris

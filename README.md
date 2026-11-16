@@ -117,7 +117,7 @@ Comprehensive project documentation is available in the [`docs/`](docs/) directo
 - **Developer**: Subhadip Dutta ([@subhadip6869](https://github.com/subhadip6869))
 - **Organization**: OriginSD ([originsd.vercel.app](https://originsd.vercel.app))
 - **Repository**: [https://github.com/subhadip6869/Oqteris-Desktop](https://github.com/subhadip6869/Oqteris-Desktop)
-- **Application ID**: `org.originsd.oqteris`
+- **Application ID**: `app.vercel.originsd.oqteris`
 
 ## License
 

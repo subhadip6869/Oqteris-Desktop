@@ -10,7 +10,7 @@ APP_NAME: str = "Oqteris"
 APP_DISPLAY_NAME: str = "Oqteris PDF Editor"
 APP_DESCRIPTION: str = "Complete Cross-Platform PDF Reader and Editor"
 APP_VERSION: str = "1.0.0"
-APP_IDENTIFIER: str = "org.originsd.oqteris"
+APP_IDENTIFIER: str = "app.vercel.originsd.oqteris"
 
 # Organization & Developer
 ORGANIZATION_NAME: str = "OriginSD"
