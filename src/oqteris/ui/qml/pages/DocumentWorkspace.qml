@@ -502,18 +502,20 @@ Rectangle {
             border.color: Theme.borderSubtle
             border.width: 1
 
-            Row {
+            RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 12
                 anchors.rightMargin: 12
+                spacing: 0
 
                 // Left: Page Navigation Controls
-                Row {
-                    anchors.verticalCenter: parent.verticalCenter
+                RowLayout {
+                    Layout.alignment: Qt.AlignVCenter
                     spacing: 6
                     visible: pdfController.hasDocument
 
                     OqToolButton {
+                        Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "⏮"
                         tooltipText: "First Page"
                         enabled: pdfController.currentPage > 0
@@ -521,6 +523,7 @@ Rectangle {
                     }
 
                     OqToolButton {
+                        Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "◀"
                         tooltipText: "Previous Page"
                         enabled: pdfController.currentPage > 0
@@ -528,14 +531,15 @@ Rectangle {
                     }
 
                     Text {
+                        Layout.alignment: Qt.AlignVCenter
                         text: "Page " + (pdfController.currentPage + 1) + " of " + pdfController.pageCount
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamily
                         color: Theme.textPrimary
-                        anchors.verticalCenter: parent.verticalCenter
                     }
 
                     OqToolButton {
+                        Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "▶"
                         tooltipText: "Next Page"
                         enabled: pdfController.currentPage < pdfController.pageCount - 1
@@ -543,6 +547,7 @@ Rectangle {
                     }
 
                     OqToolButton {
+                        Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "⏭"
                         tooltipText: "Last Page"
                         enabled: pdfController.currentPage < pdfController.pageCount - 1
@@ -550,21 +555,20 @@ Rectangle {
                     }
                 }
 
-                // Spacer
+                // Flexible Spacer
                 Item {
-                    width: 1
-                    height: 1
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
                 }
 
                 // Right: Zoom and Display Controls
-                Row {
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 8
+                RowLayout {
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 6
                     visible: pdfController.hasDocument
 
                     OqToolButton {
+                        Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "🔍-"
                         tooltipText: "Zoom Out"
                         onClicked: pdfController.zoomOut()
@@ -572,39 +576,78 @@ Rectangle {
 
                     Slider {
                         id: zoomSlider
-                        width: 100
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: 100
+                        Layout.preferredHeight: 20
+                        hoverEnabled: true
                         from: 0.2
                         to: 3.0
                         value: pdfController.zoomLevel
-                        anchors.verticalCenter: parent.verticalCenter
                         onMoved: pdfController.setZoom(value)
+
+                        background: Rectangle {
+                            x: zoomSlider.leftPadding
+                            y: zoomSlider.topPadding + zoomSlider.availableHeight / 2 - height / 2
+                            implicitWidth: 100
+                            implicitHeight: 4
+                            width: zoomSlider.availableWidth
+                            height: 4
+                            radius: 2
+                            color: appController.isDarkMode ? "#3E3E42" : "#D0D0D0"
+
+                            Rectangle {
+                                width: zoomSlider.visualPosition * parent.width
+                                height: parent.height
+                                color: Theme.brandPrimary
+                                radius: 2
+                            }
+                        }
+
+                        handle: Rectangle {
+                            x: zoomSlider.leftPadding + zoomSlider.visualPosition * (zoomSlider.availableWidth - width)
+                            y: zoomSlider.topPadding + zoomSlider.availableHeight / 2 - height / 2
+                            implicitWidth: 12
+                            implicitHeight: 12
+                            radius: 6
+                            color: zoomSlider.pressed ? Theme.brandPrimaryHover : (zoomSlider.hovered ? "#FFFFFF" : (appController.isDarkMode ? "#E0E0E0" : "#FFFFFF"))
+                            border.color: zoomSlider.pressed || zoomSlider.hovered ? Theme.brandPrimary : (appController.isDarkMode ? "#777777" : "#A0A0A0")
+                            border.width: 1.5
+                        }
                     }
 
                     OqToolButton {
+                        Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "🔍+"
                         tooltipText: "Zoom In"
                         onClicked: pdfController.zoomIn()
                     }
 
                     Text {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: 42
                         text: Math.round(pdfController.zoomLevel * 100) + "%"
                         font.pixelSize: Theme.fontSizeSmall
                         font.family: Theme.fontFamily
                         color: Theme.textPrimary
-                        width: 40
                         horizontalAlignment: Text.AlignRight
-                        anchors.verticalCenter: parent.verticalCenter
                     }
 
-                    Rectangle { width: 1; height: 16; color: Theme.divider; anchors.verticalCenter: parent.verticalCenter }
+                    Rectangle {
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: 1
+                        Layout.preferredHeight: 16
+                        color: Theme.divider
+                    }
 
                     OqToolButton {
+                        Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "↔"
                         tooltipText: "Fit to Width"
                         onClicked: pdfController.fitWidth(viewContainer.width)
                     }
 
                     OqToolButton {
+                        Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "↕"
                         tooltipText: "Fit Entire Page"
                         onClicked: pdfController.fitPage(viewContainer.width, viewContainer.height)

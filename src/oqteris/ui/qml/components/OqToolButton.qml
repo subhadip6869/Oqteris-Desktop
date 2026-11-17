@@ -26,9 +26,11 @@ Item {
 
         Text {
             anchors.centerIn: parent
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
             text: root.iconSymbol
-            font.pixelSize: 13
-            font.family: "Segoe UI Symbol, sans-serif"
+            font.pixelSize: 12
+            font.family: "Segoe UI Symbol, Segoe UI, sans-serif"
             color: root.enabled ? Theme.textPrimary : Theme.textDisabled
         }
 

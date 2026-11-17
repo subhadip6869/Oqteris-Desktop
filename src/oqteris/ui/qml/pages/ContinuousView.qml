@@ -10,6 +10,32 @@ ListView {
 
     model: pdfController.pageCount
 
+    ScrollBar.vertical: ScrollBar {
+        id: vScrollBar
+        policy: ScrollBar.AsNeeded
+        width: 12
+        z: 10
+        visible: vScrollBar.size < 1.0
+
+        contentItem: Rectangle {
+            implicitWidth: 8
+            implicitHeight: 30
+            radius: 4
+            color: vScrollBar.pressed
+                ? Theme.brandPrimary
+                : (vScrollBar.hovered
+                    ? (appController.isDarkMode ? "#8E8E93" : "#767676")
+                    : (appController.isDarkMode ? "#5A5A5E" : "#B5B5B5"))
+        }
+
+        background: Rectangle {
+            implicitWidth: 12
+            color: vScrollBar.hovered
+                ? (appController.isDarkMode ? "#252526" : "#E8E8E8")
+                : "transparent"
+        }
+    }
+
     // Track visible page index while scrolling
     onContentYChanged: {
         var idx = indexAt(contentX + width / 2, contentY + 100)

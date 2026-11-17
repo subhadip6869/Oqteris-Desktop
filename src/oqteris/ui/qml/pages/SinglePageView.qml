@@ -10,6 +10,58 @@ Flickable {
     contentWidth: Math.max(width, paperSheet.width + 40)
     contentHeight: Math.max(height, paperSheet.height + 40)
 
+    ScrollBar.vertical: ScrollBar {
+        id: vScrollBar
+        policy: ScrollBar.AsNeeded
+        width: 12
+        z: 10
+        visible: vScrollBar.size < 1.0
+
+        contentItem: Rectangle {
+            implicitWidth: 8
+            implicitHeight: 30
+            radius: 4
+            color: vScrollBar.pressed
+                ? Theme.brandPrimary
+                : (vScrollBar.hovered
+                    ? (appController.isDarkMode ? "#8E8E93" : "#767676")
+                    : (appController.isDarkMode ? "#5A5A5E" : "#B5B5B5"))
+        }
+
+        background: Rectangle {
+            implicitWidth: 12
+            color: vScrollBar.hovered
+                ? (appController.isDarkMode ? "#252526" : "#E8E8E8")
+                : "transparent"
+        }
+    }
+
+    ScrollBar.horizontal: ScrollBar {
+        id: hScrollBar
+        policy: ScrollBar.AsNeeded
+        height: 12
+        z: 10
+        visible: hScrollBar.size < 1.0
+
+        contentItem: Rectangle {
+            implicitWidth: 30
+            implicitHeight: 8
+            radius: 4
+            color: hScrollBar.pressed
+                ? Theme.brandPrimary
+                : (hScrollBar.hovered
+                    ? (appController.isDarkMode ? "#8E8E93" : "#767676")
+                    : (appController.isDarkMode ? "#5A5A5E" : "#B5B5B5"))
+        }
+
+        background: Rectangle {
+            implicitHeight: 12
+            color: hScrollBar.hovered
+                ? (appController.isDarkMode ? "#252526" : "#E8E8E8")
+                : "transparent"
+        }
+    }
+
     Rectangle {
         id: paperSheet
         x: Math.max(20, (root.contentWidth - width) / 2)
