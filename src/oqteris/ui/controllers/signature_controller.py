@@ -87,29 +87,34 @@ class SignatureController(QObject):
             for s in self._cached_signatures
         )
 
+    @Property(bool, notify=signaturesChanged)
+    def hasInvalid(self) -> bool:
+        if not self._cached_signatures:
+            return False
+        return any(
+            s.trust_status == SignatureTrustStatus.INVALID
+            or not s.is_cryptographically_valid
+            or s.doc_modified_since_signing
+            for s in self._cached_signatures
+        )
+
+    @Property(bool, notify=signaturesChanged)
+    def hasUntrusted(self) -> bool:
+        if not self._cached_signatures or self.hasInvalid:
+            return False
+        return any(s.trust_status == SignatureTrustStatus.UNTRUSTED for s in self._cached_signatures)
+
     @Property(str, notify=signaturesChanged)
     def statusSummary(self) -> str:
         if not self._cached_signatures:
             return ""
-
-        count = len(self._cached_signatures)
-        all_trusted = all(s.trust_status == SignatureTrustStatus.TRUSTED for s in self._cached_signatures)
-        any_invalid = any(
-            s.trust_status == SignatureTrustStatus.INVALID or not s.is_cryptographically_valid or s.doc_modified_since_signing
-            for s in self._cached_signatures
-        )
-        any_expired = any(s.trust_status == SignatureTrustStatus.EXPIRED for s in self._cached_signatures)
-
-        if any_invalid:
-            return "At least one signature has problems: Signature is invalid or document was modified after signing."
-        if any_expired:
-            return "At least one signature has problems: Certificate has expired."
-        if all_trusted:
-            if count == 1:
-                return "Signed and all signatures are valid."
-            return f"Signed and all {count} signatures are valid."
-
-        return "At least one signature has problems: Signature Not Verified (Signer's certificate is not trusted)."
+        if self.hasInvalid:
+            return "Signature Invalid / Modified"
+        if self.hasUntrusted:
+            return "Valid (Untrusted Root CA)"
+        if self.allValidAndTrusted:
+            return "Digitally Signed & Trusted"
+        return "Digital Signature Detected"
 
     @Property("QVariantList", notify=certificatesChanged)
     def trustedCertificates(self) -> list[dict[str, Any]]:
@@ -143,6 +148,14 @@ class SignatureController(QObject):
 
         try:
             self._cached_signatures = self._sig_service.inspect_and_validate_signatures(doc.file_path)
+
+            # Apply Acrobat/Foxit-style in-memory validity appearance (n1..n4 layers)
+            if doc.raw_doc is not None and not doc.raw_doc.is_closed:
+                from oqteris.pdf.rendering.signature_appearance import SignatureValidityAppearance
+                handled = SignatureValidityAppearance.apply(doc.raw_doc, self._cached_signatures)
+                if handled:
+                    logger.info("Applied validity appearance to layered signatures: %s", handled)
+                    self._pdf_controller.invalidateRender()
         except Exception as e:
             logger.error("Error inspecting signatures: %s", e)
             self._cached_signatures = []

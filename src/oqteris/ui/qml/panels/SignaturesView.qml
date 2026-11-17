@@ -108,13 +108,17 @@ Item {
         // Summary Banner (if document has signatures)
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: bannerCol.implicitHeight + 12
+            Layout.preferredHeight: bannerCol.implicitHeight + 14
             radius: 4
             visible: signatureController.hasSignatures
-            color: signatureController.allValidAndTrusted
-                ? (appController.isDarkMode ? "#1B3320" : "#E8F5E9")
-                : (appController.isDarkMode ? "#332B15" : "#FFF8E1")
-            border.color: signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning
+            color: signatureController.hasInvalid
+                ? (appController.isDarkMode ? "#3E1818" : "#FFEBEE")
+                : (signatureController.allValidAndTrusted
+                    ? (appController.isDarkMode ? "#1B3320" : "#E8F5E9")
+                    : (appController.isDarkMode ? "#332B15" : "#FFF8E1"))
+            border.color: signatureController.hasInvalid
+                ? Theme.statusError
+                : (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
             border.width: 1
 
             RowLayout {
@@ -124,19 +128,21 @@ Item {
                 spacing: 8
 
                 Text {
-                    text: signatureController.allValidAndTrusted ? "✓" : "?"
+                    text: signatureController.hasInvalid ? "✕" : (signatureController.allValidAndTrusted ? "✓" : "?")
                     font.pixelSize: 16
                     font.bold: true
-                    color: signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning
+                    color: signatureController.hasInvalid
+                        ? Theme.statusError
+                        : (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
                 }
 
                 Text {
-                    text: signatureController.allValidAndTrusted
-                        ? "All signatures are verified and trusted."
-                        : "Signatures detected: identity verification required."
+                    text: signatureController.statusSummary
                     font.pixelSize: Theme.fontSizeSmall
                     font.weight: Font.DemiBold
-                    color: signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning
+                    color: signatureController.hasInvalid
+                        ? Theme.statusError
+                        : (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                 }

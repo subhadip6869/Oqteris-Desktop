@@ -86,120 +86,36 @@ ListView {
                     width: (modelData.normRect && modelData.normRect.length === 4) ? modelData.normRect[2] * pageImage.width : 0
                     height: (modelData.normRect && modelData.normRect.length === 4) ? modelData.normRect[3] * pageImage.height : 0
                     visible: modelData.normRect && modelData.normRect.length === 4 && modelData.normRect[2] > 0
-                    color: modelData.trustStatus === "trusted"
-                        ? "#FFFFFF"
-                        : (sigContMouse.containsMouse ? "#15FF9800" : "transparent")
-                    border.color: modelData.trustStatus === "trusted"
-                        ? Theme.statusSuccess
-                        : (modelData.trustStatus === "invalid" ? Theme.statusError : Theme.statusWarning)
-                    border.width: sigContMouse.containsMouse ? 2 : 1
+                    color: "transparent"
+                    border.color: sigContMouse.containsMouse ? Theme.brandPrimary : "transparent"
+                    border.width: sigContMouse.containsMouse ? 1.5 : 0
                     radius: 2
-                    clip: true
 
-                    // When Trusted: Native Valid Signature Box Representation
-                    Item {
-                        anchors.fill: parent
-                        visible: modelData.trustStatus === "trusted"
-
-                        // Left Details Column
-                        Column {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 4
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 1
-
-                            Text {
-                                text: "Signature valid"
-                                font.pixelSize: Math.max(8, Math.min(13, sigOverlayCont.height * 0.19))
-                                font.weight: Font.DemiBold
-                                color: "#111111"
-                            }
-                            Text {
-                                text: "Digitally Signed."
-                                font.pixelSize: Math.max(7, Math.min(10, sigOverlayCont.height * 0.14))
-                                color: "#222222"
-                            }
-                            Text {
-                                text: "Name: " + (modelData.signerName || "Unknown")
-                                font.pixelSize: Math.max(7, Math.min(10, sigOverlayCont.height * 0.14))
-                                color: "#222222"
-                            }
-                            Text {
-                                text: "Date: " + (modelData.signingTime || "")
-                                font.pixelSize: Math.max(7, Math.min(10, sigOverlayCont.height * 0.14))
-                                color: "#222222"
-                                visible: modelData.signingTime !== ""
-                            }
-                            Text {
-                                text: "Reason: " + (modelData.reason || "")
-                                font.pixelSize: Math.max(7, Math.min(10, sigOverlayCont.height * 0.14))
-                                color: "#222222"
-                                visible: modelData.reason !== ""
-                            }
-                            Text {
-                                text: "Location: " + (modelData.location || "")
-                                font.pixelSize: Math.max(7, Math.min(10, sigOverlayCont.height * 0.14))
-                                color: "#222222"
-                                visible: modelData.location !== ""
-                            }
-                        }
-
-                        // Bold Green Checkmark with 3D Shadow
-                        Item {
-                            anchors.right: parent.right
-                            anchors.rightMargin: parent.width * 0.12
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.height * 0.8
-                            height: parent.height * 0.8
-
-                            Text {
-                                anchors.centerIn: parent
-                                anchors.horizontalCenterOffset: 2
-                                anchors.verticalCenterOffset: 2
-                                text: "✔"
-                                font.pixelSize: Math.max(16, Math.min(parent.height * 1.1, 48))
-                                font.bold: true
-                                color: "#222222"
-                                rotation: -4
-                            }
-                            Text {
-                                anchors.centerIn: parent
-                                text: "✔"
-                                font.pixelSize: Math.max(16, Math.min(parent.height * 1.1, 48))
-                                font.bold: true
-                                color: "#00A843"
-                                rotation: -4
-                            }
-                        }
-                    }
-
-                    // Corner Status Badge (when untrusted or invalid)
+                    // For non-layered signatures only: round badge in top-left corner
                     Rectangle {
                         anchors.top: parent.top
-                        anchors.right: parent.right
+                        anchors.left: parent.left
                         anchors.margins: 2
                         height: 18
-                        width: sigContBadgeText.implicitWidth + 10
+                        width: 18
                         radius: 9
-                        color: modelData.trustStatus === "invalid" ? Theme.statusError : Theme.statusWarning
-                        visible: modelData.trustStatus !== "trusted" && sigOverlayCont.width > 60 && sigOverlayCont.height > 24
+                        color: {
+                            if (modelData.trustStatus === "trusted") return Theme.statusSuccess
+                            if (modelData.trustStatus === "untrusted") return Theme.statusWarning
+                            return Theme.statusError
+                        }
+                        visible: !modelData.isLayered
 
-                        Row {
+                        Text {
                             anchors.centerIn: parent
-                            spacing: 2
-                            Text {
-                                text: modelData.trustStatus === "invalid" ? "✕" : "?"
-                                font.pixelSize: 10
-                                font.bold: true
-                                color: "#FFFFFF"
+                            text: {
+                                if (modelData.trustStatus === "trusted") return "✓"
+                                if (modelData.trustStatus === "untrusted") return "?"
+                                return "✕"
                             }
-                            Text {
-                                id: sigContBadgeText
-                                text: modelData.trustStatus === "invalid" ? "Invalid" : "Not Verified"
-                                font.pixelSize: 9
-                                font.bold: true
-                                color: "#FFFFFF"
-                            }
+                            font.pixelSize: 10
+                            font.bold: true
+                            color: "#FFFFFF"
                         }
                     }
 
@@ -209,14 +125,17 @@ ListView {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
+                            mainPanelState.showLeftPanel = true
+                            mainPanelState.currentPanelTab = "signatures"
                             certDetailsDialogLoader.openCertificateDialog(modelData.sigIndex !== undefined ? modelData.sigIndex : index)
                         }
 
                         ToolTip.visible: sigContMouse.containsMouse
-                        ToolTip.delay: 400
-                        ToolTip.text: modelData.trustStatus === "trusted"
-                            ? ("Digitally signed by " + modelData.signerName + "\nSignature is VALID and certificate is TRUSTED.\nClick to view certificate details.")
-                            : ("Digitally signed by " + modelData.signerName + "\nSignature is NOT VERIFIED.\nClick to view details or trust certificate.")
+                        ToolTip.delay: 300
+                        ToolTip.text: {
+                            var st = modelData.trustStatus === "trusted" ? "Digitally Signed & Trusted" : (modelData.trustStatus === "untrusted" ? "Valid (Untrusted Root CA)" : "Signature Invalid / Modified")
+                            return "Digitally signed by " + modelData.signerName + "\nStatus: " + st + "\nClick to view certificate details."
+                        }
                     }
                 }
             }

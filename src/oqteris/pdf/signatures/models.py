@@ -68,6 +68,7 @@ class SignatureInfo:
     page_number: int = 0
     rect: list[float] = field(default_factory=list)
     norm_rect: list[float] = field(default_factory=list)
+    is_layered: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -87,4 +88,5 @@ class SignatureInfo:
             "pageNumber": self.page_number,
             "rect": self.rect,
             "normRect": self.norm_rect,
+            "isLayered": self.is_layered,
         }

@@ -84,7 +84,7 @@ def test_signature_trust_and_revalidation_workflow(
     assert sig_ctrl.hasSignatures is True
     assert sig_ctrl.signatureCount == 1
     assert sig_ctrl.allValidAndTrusted is False
-    assert "Signature Not Verified" in sig_ctrl.statusSummary
+    assert sig_ctrl.statusSummary == "Valid (Untrusted Root CA)"
 
     sigs = sig_ctrl.documentSignatures
     assert len(sigs) == 1
@@ -104,7 +104,7 @@ def test_signature_trust_and_revalidation_workflow(
 
     # 4. Re-verify: now trusted and valid!
     assert sig_ctrl.allValidAndTrusted is True
-    assert "Signed and all signatures are valid" in sig_ctrl.statusSummary
+    assert sig_ctrl.statusSummary == "Digitally Signed & Trusted"
     sigs_after = sig_ctrl.documentSignatures
     assert sigs_after[0]["trustStatus"] == "trusted"
     assert sig_ctrl.signaturesRevision > 1

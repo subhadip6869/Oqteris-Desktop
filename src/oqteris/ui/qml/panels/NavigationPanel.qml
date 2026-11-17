@@ -12,6 +12,16 @@ Rectangle {
     readonly property int minPanelWidth: 260
     readonly property int maxPanelWidth: 500
 
+    Connections {
+        target: signatureController
+        function onSignaturesChanged() {
+            if (signatureController.hasSignatures && !mainPanelState.showLeftPanel) {
+                mainPanelState.showLeftPanel = true
+                mainPanelState.currentPanelTab = "signatures"
+            }
+        }
+    }
+
     Row {
         anchors.fill: parent
 

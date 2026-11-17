@@ -160,10 +160,14 @@ Rectangle {
             implicitHeight: 38
             height: implicitHeight
             visible: pdfController.hasDocument && signatureController.hasSignatures
-            color: signatureController.allValidAndTrusted
-                ? (appController.isDarkMode ? "#1B3320" : "#E8F5E9")
-                : (appController.isDarkMode ? "#332B15" : "#FFF8E1")
-            border.color: signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning
+            color: signatureController.hasInvalid
+                ? (appController.isDarkMode ? "#3E1818" : "#FFEBEE")
+                : (signatureController.allValidAndTrusted
+                    ? (appController.isDarkMode ? "#1B3320" : "#E8F5E9")
+                    : (appController.isDarkMode ? "#332B15" : "#FFF8E1"))
+            border.color: signatureController.hasInvalid
+                ? Theme.statusError
+                : (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
             border.width: 1
 
             RowLayout {
@@ -173,7 +177,7 @@ Rectangle {
                 anchors.rightMargin: 12
                 spacing: 10
 
-                // Left: Status Icon and Message
+                // Left: Status Icon and Message (clicking opens signatures panel)
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8
@@ -182,11 +186,13 @@ Rectangle {
                         width: 22
                         height: 22
                         radius: 11
-                        color: signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning
+                        color: signatureController.hasInvalid
+                            ? Theme.statusError
+                            : (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
 
                         Text {
                             anchors.centerIn: parent
-                            text: signatureController.allValidAndTrusted ? "✓" : "?"
+                            text: signatureController.hasInvalid ? "✕" : (signatureController.allValidAndTrusted ? "✓" : "?")
                             font.pixelSize: 13
                             font.bold: true
                             color: "#FFFFFF"
@@ -198,21 +204,27 @@ Rectangle {
                         text: signatureController.statusSummary
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.DemiBold
-                        color: signatureController.allValidAndTrusted
-                            ? (appController.isDarkMode ? "#A5D6A7" : "#1B5E20")
-                            : (appController.isDarkMode ? "#FFE082" : "#B78103")
+                        color: signatureController.hasInvalid
+                            ? Theme.statusError
+                            : (signatureController.allValidAndTrusted
+                                ? (appController.isDarkMode ? "#A5D6A7" : "#1B5E20")
+                                : (appController.isDarkMode ? "#FFE082" : "#B78103"))
                         Layout.fillWidth: true
                         elide: Text.ElideRight
 
                         ToolTip.visible: summaryMouse.containsMouse && statusSummaryLabel.truncated
                         ToolTip.text: statusSummaryLabel.text
                         ToolTip.delay: 300
+                    }
 
-                        MouseArea {
-                            id: summaryMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            acceptedButtons: Qt.NoButton
+                    MouseArea {
+                        id: summaryMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            mainPanelState.showLeftPanel = true
+                            mainPanelState.currentPanelTab = "signatures"
                         }
                     }
                 }
@@ -227,7 +239,7 @@ Rectangle {
                         Layout.preferredWidth: trustSignerText.implicitWidth + 18
                         Layout.preferredHeight: 26
                         radius: 3
-                        visible: !signatureController.allValidAndTrusted && signatureController.signatureCount > 0
+                        visible: signatureController.hasUntrusted
                         color: trustSignerMouse.containsMouse ? Theme.brandPrimaryHover : Theme.brandPrimary
 
                         Row {
