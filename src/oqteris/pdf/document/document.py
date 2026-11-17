@@ -58,6 +58,10 @@ class PDFDocument:
         return self._file_path
 
     @property
+    def password(self) -> str:
+        return self._password
+
+    @property
     def page_count(self) -> int:
         with self._lock:
             if not self.is_open or self._doc is None:

@@ -59,6 +59,7 @@ class SignatureService:
     def inspect_and_validate_signatures(
         self,
         pdf_path: str | Path,
+        password: str = "",
         check_revocation_online: bool = False,
     ) -> list[SignatureInfo]:
         """Inspect all embedded digital signatures in a PDF and validate their cryptographic integrity and trust."""
@@ -72,6 +73,8 @@ class SignatureService:
         field_locations: dict[str, dict[str, Any]] = {}
         try:
             doc_fitz = fitz.open(str(path))
+            if doc_fitz.is_encrypted and password:
+                doc_fitz.authenticate(password)
             for page_idx, page in enumerate(doc_fitz):
                 pw, ph = page.rect.width, page.rect.height
                 for widget in page.widgets():
@@ -94,6 +97,8 @@ class SignatureService:
         try:
             with open(path, "rb") as f:
                 reader = PdfFileReader(f, strict=False)
+                if reader.encrypted and password:
+                    reader.decrypt(password)
                 embedded_sigs = reader.embedded_signatures
 
                 if not embedded_sigs:

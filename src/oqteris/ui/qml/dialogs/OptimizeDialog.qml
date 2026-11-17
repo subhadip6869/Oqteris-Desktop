@@ -4,7 +4,6 @@ import "../themes"
 
 Dialog {
     id: root
-    title: "Optimize & Compress PDF"
     width: 440
     height: 340
     modal: true

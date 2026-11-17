@@ -1,16 +1,20 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import QtQuick.Window
 import "../components"
 import "../themes"
 
-Dialog {
+Window {
     id: root
     title: "Certificate Information"
-    modal: true
-    anchors.centerIn: parent
-    width: Math.min(560, parent.width - 32)
-    height: Math.min(520, parent.height - 40)
+    width: 560
+    height: 520
+    minimumWidth: 460
+    minimumHeight: 380
+    modality: Qt.ApplicationModal
+    flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
+    color: Theme.windowBackground
 
     property int signatureIndex: 0
     property var certData: ({})
@@ -18,17 +22,22 @@ Dialog {
     function openForSignature(index) {
         signatureIndex = index
         certData = signatureController.getCertificateDetails(index)
-        root.open()
+        root.show()
+        root.raise()
+        root.requestActivate()
     }
 
-    background: Rectangle {
-        color: Theme.windowBackground
-        border.color: Theme.borderSubtle
-        border.width: 1
-        radius: 6
+    function open() {
+        root.show()
+        root.raise()
+        root.requestActivate()
     }
 
-    contentItem: ColumnLayout {
+    function close() {
+        root.hide()
+    }
+
+    ColumnLayout {
         anchors.fill: parent
         anchors.margins: 16
         spacing: 12

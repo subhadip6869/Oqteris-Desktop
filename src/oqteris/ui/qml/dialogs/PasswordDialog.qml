@@ -4,9 +4,8 @@ import "../themes"
 
 Dialog {
     id: root
-    title: "Password Required"
-    width: 380
-    height: 220
+    width: 400
+    height: 240
     modal: true
     anchors.centerIn: parent
 
@@ -21,8 +20,19 @@ Dialog {
 
     Column {
         anchors.fill: parent
-        anchors.margins: 16
+        anchors.margins: 18
         spacing: 12
+
+        Row {
+            spacing: 8
+            Text { text: "🔒"; font.pixelSize: 16 }
+            Text {
+                text: "Password Required"
+                font.pixelSize: Theme.fontSizeMedium
+                font.bold: true
+                color: Theme.textPrimary
+            }
+        }
 
         Text {
             text: "This document is password protected. Please enter the password to open it:"

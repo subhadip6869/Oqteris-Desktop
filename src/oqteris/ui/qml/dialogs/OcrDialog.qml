@@ -4,7 +4,6 @@ import "../themes"
 
 Dialog {
     id: root
-    title: "OCR Text Recognition"
     width: 460
     height: 380
     modal: true

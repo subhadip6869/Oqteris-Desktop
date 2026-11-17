@@ -4,7 +4,6 @@ import "../themes"
 
 Dialog {
     id: root
-    title: "Digital Signature"
     width: 480
     height: 440
     modal: true

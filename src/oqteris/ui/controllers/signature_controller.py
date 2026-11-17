@@ -147,7 +147,10 @@ class SignatureController(QObject):
             return
 
         try:
-            self._cached_signatures = self._sig_service.inspect_and_validate_signatures(doc.file_path)
+            self._cached_signatures = self._sig_service.inspect_and_validate_signatures(
+                doc.file_path,
+                password=getattr(doc, "password", "")
+            )
 
             # Apply Acrobat/Foxit-style in-memory validity appearance (n1..n4 layers)
             if doc.raw_doc is not None and not doc.raw_doc.is_closed:

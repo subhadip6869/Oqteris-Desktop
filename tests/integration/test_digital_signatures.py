@@ -124,3 +124,53 @@ def test_signature_trust_and_revalidation_workflow(
     pdf_ctrl.closeDocument()
     assert pdf_ctrl.hasDocument is False
 
+
+def test_encrypted_pdf_signature_inspection(
+    sample_pdf_normal: Path,
+    test_p12_certificate: tuple[Path, str],
+    temp_dir: Path,
+    test_db,
+):
+    """Test that digital signatures in encrypted/password-protected PDFs are detected with password."""
+    import pymupdf
+
+    p12_path, passphrase = test_p12_certificate
+    signed_pdf = temp_dir / "signed_before_encrypt.pdf"
+    encrypted_signed_pdf = temp_dir / "encrypted_signed.pdf"
+
+    cert_repo = CertificatesRepository(db_manager=test_db)
+    service = SignatureService(cert_repo=cert_repo)
+
+    # 1. Sign
+    service.sign_pdf(
+        input_path=sample_pdf_normal,
+        output_path=signed_pdf,
+        pkcs12_path=p12_path,
+        passphrase=passphrase,
+        field_name="Sig_Encrypted",
+        reason="Encrypted test",
+        page_index=0,
+    )
+
+    # 2. Encrypt
+    doc = pymupdf.open(str(signed_pdf))
+    doc.save(
+        str(encrypted_signed_pdf),
+        encryption=pymupdf.PDF_ENCRYPT_AES_256,
+        user_pw="secret123",
+        owner_pw="owner123",
+    )
+    doc.close()
+
+    # 3. Without password -> returns empty list (graceful failure)
+    sigs_nopw = service.inspect_and_validate_signatures(encrypted_signed_pdf)
+    assert len(sigs_nopw) == 0
+
+    # 4. With password -> successfully decrypts and detects signature
+    sigs_pw = service.inspect_and_validate_signatures(encrypted_signed_pdf, password="secret123")
+    assert len(sigs_pw) == 1
+    assert sigs_pw[0].field_name == "Sig_Encrypted"
+    assert sigs_pw[0].certificate is not None
+    assert sigs_pw[0].certificate.common_name == "Test Signer"
+
+

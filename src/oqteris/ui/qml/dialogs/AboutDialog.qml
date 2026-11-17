@@ -4,7 +4,6 @@ import "../themes"
 
 Dialog {
     id: root
-    title: "About Oqteris"
     width: 440
     height: 380
     modal: true

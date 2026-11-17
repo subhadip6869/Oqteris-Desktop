@@ -4,7 +4,6 @@ import "../themes"
 
 Dialog {
     id: root
-    title: "Settings"
     width: 480
     height: 420
     modal: true

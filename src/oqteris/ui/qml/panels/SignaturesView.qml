@@ -306,7 +306,6 @@ Item {
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 6
-                            alignment: Qt.AlignTop
 
                             Text {
                                 text: modelData.docModified ? "✕" : "✓"
@@ -327,7 +326,6 @@ Item {
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 6
-                            alignment: Qt.AlignTop
 
                             Text {
                                 text: modelData.trustStatus === "trusted" ? "✓" : "⚠"
