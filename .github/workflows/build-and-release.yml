@@ -112,6 +112,7 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
           pip install pyinstaller setuptools wheel
+          pip install PySide6-Addons
 
       # --- Windows: Inno Setup Installer (.exe) ---
       - name: Build Windows Installer (.exe)

@@ -16,8 +16,12 @@ system = platform.system()
 datas = [
     (str(SRC_DIR / "oqteris" / "ui" / "qml"), "oqteris/ui/qml"),
     (str(ASSETS_DIR), "assets"),
-    (str(PYSIDE6_DIR / "qml"), "PySide6/qml"),
 ]
+
+# PySide6/qml ships with PySide6-Addons; guard against environments where it is absent.
+_pyside6_qml = PYSIDE6_DIR / "qml"
+if _pyside6_qml.is_dir():
+    datas.append((str(_pyside6_qml), "PySide6/qml"))
 
 hiddenimports = [
     "oqteris",
