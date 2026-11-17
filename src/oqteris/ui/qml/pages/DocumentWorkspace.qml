@@ -157,7 +157,7 @@ Rectangle {
         Rectangle {
             id: signatureStatusBar
             width: parent.width
-            implicitHeight: 38
+            implicitHeight: Math.max(38, statusRow.implicitHeight + 8)
             height: implicitHeight
             visible: pdfController.hasDocument && signatureController.hasSignatures
             color: signatureController.hasInvalid
@@ -178,43 +178,46 @@ Rectangle {
                 spacing: 10
 
                 // Left: Status Icon and Message (clicking opens signatures panel)
-                RowLayout {
+                Item {
                     Layout.fillWidth: true
-                    spacing: 8
+                    Layout.preferredHeight: 26
+                    Layout.alignment: Qt.AlignVCenter
 
-                    Rectangle {
-                        width: 22
-                        height: 22
-                        radius: 11
-                        color: signatureController.hasInvalid
-                            ? Theme.statusError
-                            : (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
+                    RowLayout {
+                        anchors.fill: parent
+                        spacing: 8
+
+                        Rectangle {
+                            width: 22
+                            height: 22
+                            radius: 11
+                            color: signatureController.hasInvalid
+                                ? Theme.statusError
+                                : (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: signatureController.hasInvalid ? "✕" : (signatureController.allValidAndTrusted ? "✓" : "?")
+                                font.pixelSize: 13
+                                font.bold: true
+                                color: "#FFFFFF"
+                            }
+                        }
 
                         Text {
-                            anchors.centerIn: parent
-                            text: signatureController.hasInvalid ? "✕" : (signatureController.allValidAndTrusted ? "✓" : "?")
-                            font.pixelSize: 13
-                            font.bold: true
-                            color: "#FFFFFF"
+                            id: statusSummaryLabel
+                            text: signatureController.statusSummary
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.DemiBold
+                            color: signatureController.hasInvalid
+                                ? Theme.statusError
+                                : (signatureController.allValidAndTrusted
+                                    ? (appController.isDarkMode ? "#A5D6A7" : "#1B5E20")
+                                    : (appController.isDarkMode ? "#FFE082" : "#B78103"))
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 0
+                            elide: Text.ElideRight
                         }
-                    }
-
-                    Text {
-                        id: statusSummaryLabel
-                        text: signatureController.statusSummary
-                        font.pixelSize: Theme.fontSizeSmall
-                        font.weight: Font.DemiBold
-                        color: signatureController.hasInvalid
-                            ? Theme.statusError
-                            : (signatureController.allValidAndTrusted
-                                ? (appController.isDarkMode ? "#A5D6A7" : "#1B5E20")
-                                : (appController.isDarkMode ? "#FFE082" : "#B78103"))
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-
-                        ToolTip.visible: summaryMouse.containsMouse && statusSummaryLabel.truncated
-                        ToolTip.text: statusSummaryLabel.text
-                        ToolTip.delay: 300
                     }
 
                     MouseArea {
@@ -227,27 +230,36 @@ Rectangle {
                             mainPanelState.currentPanelTab = "signatures"
                         }
                     }
+
+                    ToolTip.visible: summaryMouse.containsMouse && statusSummaryLabel.truncated
+                    ToolTip.text: statusSummaryLabel.text
+                    ToolTip.delay: 300
                 }
 
                 // Right: Action Buttons
                 RowLayout {
-                    spacing: 8
+                    spacing: 6
                     Layout.alignment: Qt.AlignVCenter
 
                     // "Trust Signer" shortcut button if untrusted
                     Rectangle {
-                        Layout.preferredWidth: trustSignerText.implicitWidth + 18
+                        Layout.preferredWidth: trustSignerRow.implicitWidth + 16
                         Layout.preferredHeight: 26
                         radius: 3
                         visible: signatureController.hasUntrusted
                         color: trustSignerMouse.containsMouse ? Theme.brandPrimaryHover : Theme.brandPrimary
 
                         Row {
+                            id: trustSignerRow
                             anchors.centerIn: parent
                             spacing: 4
-                            Text { text: "🛡"; font.pixelSize: 11; color: "#FFFFFF" }
                             Text {
-                                id: trustSignerText
+                                text: "🛡"
+                                font.pixelSize: 11
+                                color: "#FFFFFF"
+                                visible: signatureStatusBar.width > 600
+                            }
+                            Text {
                                 text: "Trust Signer"
                                 font.pixelSize: 11
                                 font.bold: true
@@ -266,7 +278,7 @@ Rectangle {
 
                     // "Signature Panel" button
                     Rectangle {
-                        Layout.preferredWidth: sigPanelText.implicitWidth + 18
+                        Layout.preferredWidth: sigPanelRow.implicitWidth + 16
                         Layout.preferredHeight: 26
                         radius: 3
                         color: sigPanelMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
@@ -274,12 +286,16 @@ Rectangle {
                         border.width: 1
 
                         Row {
+                            id: sigPanelRow
                             anchors.centerIn: parent
                             spacing: 4
-                            Text { text: "🔏"; font.pixelSize: 11 }
                             Text {
-                                id: sigPanelText
-                                text: "Signature Panel"
+                                text: "🔏"
+                                font.pixelSize: 11
+                                visible: signatureStatusBar.width > 660
+                            }
+                            Text {
+                                text: signatureStatusBar.width > 520 ? "Signature Panel" : "Panel"
                                 font.pixelSize: 11
                                 font.weight: Font.DemiBold
                                 color: Theme.textPrimary
@@ -300,7 +316,7 @@ Rectangle {
 
                     // "Validate All" button
                     Rectangle {
-                        Layout.preferredWidth: valAllText.implicitWidth + 18
+                        Layout.preferredWidth: valAllRow.implicitWidth + 16
                         Layout.preferredHeight: 26
                         radius: 3
                         color: valAllMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
@@ -308,12 +324,12 @@ Rectangle {
                         border.width: 1
 
                         Row {
+                            id: valAllRow
                             anchors.centerIn: parent
                             spacing: 4
                             Text { text: "🔄"; font.pixelSize: 10 }
                             Text {
-                                id: valAllText
-                                text: "Validate All"
+                                text: signatureStatusBar.width > 480 ? "Validate All" : "Validate"
                                 font.pixelSize: 11
                                 color: Theme.textPrimary
                             }
@@ -335,7 +351,7 @@ Rectangle {
         Item {
             id: viewContainer
             width: parent.width
-            height: parent.height - (docTabBar.visible ? 32 : 0) - (signatureStatusBar.visible ? 36 : 0) - statusBar.height
+            height: parent.height - (docTabBar.visible ? 32 : 0) - (signatureStatusBar.visible ? signatureStatusBar.height : 0) - statusBar.height
 
             // Welcome View (No document open)
             Item {

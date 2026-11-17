@@ -174,3 +174,118 @@ def test_encrypted_pdf_signature_inspection(
     assert sigs_pw[0].certificate.common_name == "Test Signer"
 
 
+def test_legacy_rsa_sha1_signature_detection_and_validation(test_db):
+    """Test detection and cryptographic validation of legacy Adobe adbe.x509.rsa_sha1 digital signature."""
+    fixture_pdf = Path(__file__).parent.parent / "fixtures" / "sample_rsa_sha1_signed.pdf"
+    assert fixture_pdf.exists()
+
+    cert_repo = CertificatesRepository(db_manager=test_db)
+    service = SignatureService(cert_repo=cert_repo)
+
+    # 1. Inspect and validate
+    sigs = service.inspect_and_validate_signatures(fixture_pdf)
+    assert len(sigs) == 1
+
+    sig = sigs[0]
+    assert sig.field_name == "Alice-1-1081652293"
+    assert sig.signer_name == "Alice"
+    assert sig.reason == "This is the trial version, please buy to activate."
+    assert sig.location == "Sign Location / city"
+    assert sig.contact_info == "some contact info..."
+    assert sig.subfilter == "adbe.x509.rsa_sha1"
+    assert sig.page_number == 0
+    assert sig.is_intact is True
+    assert sig.is_cryptographically_valid is True
+    assert sig.doc_modified_since_signing is False
+    assert sig.trust_status == SignatureTrustStatus.EXPIRED
+
+    assert sig.certificate is not None
+    assert sig.certificate.common_name == "Alice"
+    assert sig.certificate.organization == "Tecxoft"
+    assert sig.certificate.issuer == "Alice"
+    assert sig.certificate.is_self_signed is True
+    assert sig.certificate.is_expired is True
+    assert sig.certificate.is_trusted is False
+    assert sig.certificate.raw_pem.startswith("-----BEGIN CERTIFICATE-----")
+
+
+def test_legacy_signature_trust_and_controller_workflow(test_db, qapp):
+    """Test UI controller workflow on legacy adbe.x509.rsa_sha1 signature including trust and untrust."""
+    from oqteris.ui.controllers.pdf_controller import PDFController
+    from oqteris.ui.controllers.signature_controller import SignatureController
+
+    fixture_pdf = Path(__file__).parent.parent / "fixtures" / "sample_rsa_sha1_signed.pdf"
+    assert fixture_pdf.exists()
+
+    cert_repo = CertificatesRepository(db_manager=test_db)
+    service = SignatureService(cert_repo=cert_repo)
+
+    pdf_ctrl = PDFController()
+    sig_ctrl = SignatureController(pdf_controller=pdf_ctrl, cert_repo=cert_repo)
+    sig_ctrl._sig_service = service
+
+    pdf_ctrl.openDocument(str(fixture_pdf))
+    sig_ctrl.inspectSignatures()
+
+    assert sig_ctrl.hasSignatures is True
+    assert sig_ctrl.signatureCount == 1
+    assert sig_ctrl.hasUntrusted is True
+    assert sig_ctrl.statusSummary == "Valid (Certificate Expired)"
+
+    sigs = sig_ctrl.documentSignatures
+    assert len(sigs) == 1
+    assert sigs[0]["signerName"] == "Alice"
+    assert sigs[0]["trustStatus"] == "expired"
+
+    # Trust the certificate
+    trusted_ok = sig_ctrl.trustSignatureCertificate(0)
+    assert trusted_ok is True
+
+    # Re-verify: now trusted!
+    assert sig_ctrl.allValidAndTrusted is True
+    assert sig_ctrl.statusSummary == "Digitally Signed & Trusted"
+    assert sig_ctrl.documentSignatures[0]["trustStatus"] == "trusted"
+
+    # Untrust the certificate
+    untrust_ok = sig_ctrl.untrustSignatureCertificate(0)
+    assert untrust_ok is True
+    assert sig_ctrl.allValidAndTrusted is False
+    assert sig_ctrl.documentSignatures[0]["trustStatus"] == "expired"
+
+    pdf_ctrl.closeDocument()
+
+
+def test_legacy_signature_tamper_detection(temp_dir: Path, test_db):
+    """Test that tampering byte ranges or appending unauthorized data marks signature invalid."""
+    fixture_pdf = Path(__file__).parent.parent / "fixtures" / "sample_rsa_sha1_signed.pdf"
+    orig_bytes = fixture_pdf.read_bytes()
+
+    cert_repo = CertificatesRepository(db_manager=test_db)
+    service = SignatureService(cert_repo=cert_repo)
+
+    # 1. Tamper signed data: flip byte 50
+    tampered_bytes = bytearray(orig_bytes)
+    tampered_bytes[50] ^= 0xFF
+    tampered_pdf = temp_dir / "tampered_legacy.pdf"
+    tampered_pdf.write_bytes(tampered_bytes)
+
+    sigs_tampered = service.inspect_and_validate_signatures(tampered_pdf)
+    assert len(sigs_tampered) == 1
+    assert sigs_tampered[0].is_intact is False
+    assert sigs_tampered[0].is_cryptographically_valid is False
+    assert sigs_tampered[0].trust_status == SignatureTrustStatus.INVALID
+
+    # 2. Append unauthorized revision after signature
+    appended_bytes = orig_bytes + b"\n% unauthorized trailing content\n"
+    appended_pdf = temp_dir / "appended_legacy.pdf"
+    appended_pdf.write_bytes(appended_bytes)
+
+    sigs_appended = service.inspect_and_validate_signatures(appended_pdf)
+    assert len(sigs_appended) == 1
+    assert sigs_appended[0].is_intact is True
+    assert sigs_appended[0].doc_modified_since_signing is True
+    assert sigs_appended[0].is_cryptographically_valid is False
+    assert sigs_appended[0].trust_status == SignatureTrustStatus.INVALID
+
+
+

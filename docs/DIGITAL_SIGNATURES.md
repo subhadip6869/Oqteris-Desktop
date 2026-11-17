@@ -1,6 +1,26 @@
 # Digital Signatures and Certificate Security
 
-Oqteris integrates [pyHanko](https://github.com/MatthiasValvekens/pyHanko) for digital signature validation and signing.
+Oqteris integrates a hybrid digital signature engine combining pyHanko, PyMuPDF, and low-level cryptography/asn1crypto for universal signature detection and cryptographic verification across modern and legacy PDF signature formats.
+
+## Supported Digital Signature Formats
+
+1. **Modern CMS / PKCS#7 Detached & PAdES**:
+   - SubFilters: `/adbe.pkcs7.detached`, `/ETSI.CAdES.detached` (PAdES B-B, B-T, B-LT, B-LTA), `/PBAD.PAdES`.
+2. **Legacy Adobe RSA Signatures (PPKMS / PPKLite)**:
+   - SubFilter: `/adbe.x509.rsa_sha1`.
+   - Contents contain DER-encoded PKCS#1 RSA signature; certificates reside in `/Cert`.
+   - Cryptographically verified over the PDF ByteRange with SHA-1 / SHA-256 and public key extracted from `/Cert`.
+3. **Legacy PKCS#7 SHA-1 Signatures**:
+   - SubFilter: `/adbe.pkcs7.sha1`.
+   - Directly parsed and cryptographically verified against the document digest.
+4. **Document Timestamps**:
+   - SubFilters: `/ETSI.RFC3161`, `/1.2.840.113583.1.1.8`, `/DocTimeStamp`.
+   - Validates RFC 3161 TimeStampToken against byte-range digest.
+5. **Universal Signature Discovery Channels**:
+   - **Page Annotation Widgets**: All widget annotations (`/Subtype /Widget`) with `/FT /Sig` or `widget.is_signed`.
+   - **AcroForm Fields**: Recursive traversal of the `/Catalog /AcroForm /Fields` hierarchy.
+   - **Document Permissions**: Checks `/Catalog /Perms` (`/DocMDP`, `/UR`, `/UR3`).
+   - **Indirect Object Sweeping**: Scans all PDF xrefs for objects of `/Type /Sig` or `/Type /DocTimeStamp` with `/ByteRange` and `/Contents`.
 
 ## Core Security Philosophy
 

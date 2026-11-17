@@ -40,11 +40,16 @@ class SignatureController(QObject):
     signingStatusChanged = Signal(str, bool)  # message, is_success
     statusMessageRequested = Signal(str, str)  # title, message
 
-    def __init__(self, pdf_controller: PDFController, parent: Optional[QObject] = None) -> None:
+    def __init__(
+        self,
+        pdf_controller: PDFController,
+        cert_repo: Optional[CertificatesRepository] = None,
+        parent: Optional[QObject] = None,
+    ) -> None:
         super().__init__(parent)
         self._pdf_controller = pdf_controller
         self._doc_manager = get_document_manager()
-        self._cert_repo = CertificatesRepository()
+        self._cert_repo = cert_repo or CertificatesRepository()
         self._sig_service = SignatureService(cert_repo=self._cert_repo)
 
         self._cached_signatures: list[SignatureInfo] = []
@@ -102,7 +107,14 @@ class SignatureController(QObject):
     def hasUntrusted(self) -> bool:
         if not self._cached_signatures or self.hasInvalid:
             return False
-        return any(s.trust_status == SignatureTrustStatus.UNTRUSTED for s in self._cached_signatures)
+        return any(
+            s.trust_status in (
+                SignatureTrustStatus.UNTRUSTED,
+                SignatureTrustStatus.EXPIRED,
+                SignatureTrustStatus.UNKNOWN,
+            )
+            for s in self._cached_signatures
+        )
 
     @Property(str, notify=signaturesChanged)
     def statusSummary(self) -> str:
@@ -110,10 +122,12 @@ class SignatureController(QObject):
             return ""
         if self.hasInvalid:
             return "Signature Invalid / Modified"
-        if self.hasUntrusted:
-            return "Valid (Untrusted Root CA)"
         if self.allValidAndTrusted:
             return "Digitally Signed & Trusted"
+        if any(s.trust_status == SignatureTrustStatus.EXPIRED for s in self._cached_signatures):
+            return "Valid (Certificate Expired)"
+        if self.hasUntrusted:
+            return "Valid (Untrusted Root CA)"
         return "Digital Signature Detected"
 
     @Property("QVariantList", notify=certificatesChanged)

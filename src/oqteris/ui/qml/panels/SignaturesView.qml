@@ -13,94 +13,106 @@ Item {
         spacing: 10
 
         // Panel Header
-        RowLayout {
+        ColumnLayout {
             Layout.fillWidth: true
-            spacing: 6
+            spacing: 8
 
-            Text {
-                text: "Digital Signatures"
-                font.pixelSize: Theme.fontSizeMedium
-                font.weight: Font.DemiBold
-                color: Theme.textPrimary
-            }
-
-            Rectangle {
-                width: sigBadge.implicitWidth + 8
-                height: 18
-                radius: 9
-                color: signatureController.signatureCount > 0
-                    ? (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
-                    : Theme.borderSubtle
-                visible: signatureController.signatureCount > 0
+            // Title and Signature Count Badge
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
 
                 Text {
-                    id: sigBadge
-                    anchors.centerIn: parent
-                    text: signatureController.signatureCount
-                    font.pixelSize: 10
-                    font.bold: true
-                    color: "#FFFFFF"
+                    text: "Digital Signatures"
+                    font.pixelSize: Theme.fontSizeMedium
+                    font.weight: Font.DemiBold
+                    color: Theme.textPrimary
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
                 }
-            }
 
-            Item { Layout.fillWidth: true }
+                Rectangle {
+                    width: sigBadge.implicitWidth + 8
+                    height: 18
+                    radius: 9
+                    color: signatureController.signatureCount > 0
+                        ? (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
+                        : Theme.borderSubtle
+                    visible: signatureController.signatureCount > 0
 
-            // Validate Button
-            Rectangle {
-                Layout.preferredWidth: 68
-                Layout.preferredHeight: 24
-                radius: 3
-                color: refreshMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
-                border.color: Theme.borderSubtle
-                border.width: 1
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 4
-                    Text { text: "🔄"; font.pixelSize: 10 }
                     Text {
-                        text: "Validate"
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.brandPrimary
+                        id: sigBadge
+                        anchors.centerIn: parent
+                        text: signatureController.signatureCount
+                        font.pixelSize: 10
                         font.bold: true
+                        color: "#FFFFFF"
                     }
-                }
-
-                MouseArea {
-                    id: refreshMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: signatureController.inspectSignatures()
                 }
             }
 
-            // Import Certificate Button
-            Rectangle {
-                Layout.preferredWidth: 60
-                Layout.preferredHeight: 24
-                radius: 3
-                color: importMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
-                border.color: Theme.borderSubtle
-                border.width: 1
+            // Action Buttons Row (Validate & Import)
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
 
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 4
-                    Text { text: "📥"; font.pixelSize: 10 }
-                    Text {
-                        text: "Import"
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.textPrimary
+                // Validate Button
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 26
+                    radius: 3
+                    color: refreshMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
+                    border.color: Theme.borderSubtle
+                    border.width: 1
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        Text { text: "🔄"; font.pixelSize: 10 }
+                        Text {
+                            text: "Validate"
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.brandPrimary
+                            font.bold: true
+                        }
+                    }
+
+                    MouseArea {
+                        id: refreshMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: signatureController.inspectSignatures()
                     }
                 }
 
-                MouseArea {
-                    id: importMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: importCertDialog.open()
+                // Import Certificate Button
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 26
+                    radius: 3
+                    color: importMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
+                    border.color: Theme.borderSubtle
+                    border.width: 1
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        Text { text: "📥"; font.pixelSize: 10 }
+                        Text {
+                            text: "Import"
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.textPrimary
+                        }
+                    }
+
+                    MouseArea {
+                        id: importMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: importCertDialog.open()
+                    }
                 }
             }
         }
@@ -108,7 +120,7 @@ Item {
         // Summary Banner (if document has signatures)
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: bannerCol.implicitHeight + 14
+            implicitHeight: bannerCol.implicitHeight + 16
             radius: 4
             visible: signatureController.hasSignatures
             color: signatureController.hasInvalid
@@ -131,6 +143,7 @@ Item {
                     text: signatureController.hasInvalid ? "✕" : (signatureController.allValidAndTrusted ? "✓" : "?")
                     font.pixelSize: 16
                     font.bold: true
+                    Layout.alignment: Qt.AlignVCenter
                     color: signatureController.hasInvalid
                         ? Theme.statusError
                         : (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
@@ -144,7 +157,8 @@ Item {
                         ? Theme.statusError
                         : (signatureController.allValidAndTrusted ? Theme.statusSuccess : Theme.statusWarning)
                     Layout.fillWidth: true
-                    wrapMode: Text.WordWrap
+                    Layout.preferredWidth: 0
+                    wrapMode: Text.Wrap
                 }
             }
         }
@@ -165,7 +179,7 @@ Item {
                 border.width: 1.5
                 border.color: {
                     if (modelData.trustStatus === "trusted") return Theme.statusSuccess
-                    if (modelData.trustStatus === "untrusted") return Theme.statusWarning
+                    if (modelData.trustStatus === "untrusted" || modelData.trustStatus === "expired" || modelData.trustStatus === "unknown") return Theme.statusWarning
                     return Theme.statusError
                 }
 
@@ -182,50 +196,56 @@ Item {
 
                         // Status Badge
                         Rectangle {
+                            Layout.fillWidth: true
                             Layout.preferredHeight: 22
-                            Layout.preferredWidth: badgeRow.implicitWidth + 12
                             radius: 11
                             color: {
                                 if (modelData.trustStatus === "trusted") return Theme.statusSuccess
-                                if (modelData.trustStatus === "untrusted") return Theme.statusWarning
+                                if (modelData.trustStatus === "untrusted" || modelData.trustStatus === "expired" || modelData.trustStatus === "unknown") return Theme.statusWarning
                                 return Theme.statusError
                             }
 
-                            Row {
-                                id: badgeRow
-                                anchors.centerIn: parent
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                anchors.rightMargin: 8
                                 spacing: 4
 
                                 Text {
                                     text: {
                                         if (modelData.trustStatus === "trusted") return "✓"
-                                        if (modelData.trustStatus === "untrusted") return "?"
+                                        if (modelData.trustStatus === "untrusted" || modelData.trustStatus === "expired" || modelData.trustStatus === "unknown") return "?"
                                         return "✕"
                                     }
                                     color: "#FFFFFF"
                                     font.pixelSize: 11
                                     font.bold: true
+                                    Layout.alignment: Qt.AlignVCenter
                                 }
 
                                 Text {
+                                    id: badgeText
                                     text: {
                                         if (modelData.trustStatus === "trusted") return "SIGNATURE VALID"
-                                        if (modelData.trustStatus === "untrusted") return "SIGNATURE NOT VERIFIED"
+                                        if (modelData.trustStatus === "untrusted") return "NOT VERIFIED"
+                                        if (modelData.trustStatus === "expired") return "CERTIFICATE EXPIRED"
+                                        if (modelData.trustStatus === "unknown") return "VALIDITY UNKNOWN"
                                         return "INVALID SIGNATURE"
                                     }
                                     font.pixelSize: 10
                                     font.bold: true
                                     color: "#FFFFFF"
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                    Layout.preferredWidth: 0
                                 }
                             }
                         }
 
-                        Item { Layout.fillWidth: true }
-
                         // Page Jump Button
                         Rectangle {
-                            Layout.preferredHeight: 20
-                            Layout.preferredWidth: pageJumpText.implicitWidth + 10
+                            Layout.preferredHeight: 22
+                            Layout.preferredWidth: pageJumpText.implicitWidth + 12
                             radius: 3
                             color: pageJumpMouse.containsMouse ? Theme.buttonHover : "transparent"
                             border.color: Theme.borderSubtle
@@ -256,7 +276,8 @@ Item {
                         font.weight: Font.DemiBold
                         color: Theme.textPrimary
                         Layout.fillWidth: true
-                        wrapMode: Text.WrapAnywhere
+                        Layout.preferredWidth: 0
+                        wrapMode: Text.Wrap
                     }
 
                     // Metadata Rows (Date, Reason, Location)
@@ -269,7 +290,8 @@ Item {
                             font.pixelSize: 11
                             color: Theme.textSecondary
                             Layout.fillWidth: true
-                            wrapMode: Text.WordWrap
+                            Layout.preferredWidth: 0
+                            wrapMode: Text.Wrap
                             visible: modelData.signingTime !== ""
                         }
 
@@ -278,7 +300,8 @@ Item {
                             font.pixelSize: 11
                             color: Theme.textSecondary
                             Layout.fillWidth: true
-                            wrapMode: Text.WordWrap
+                            Layout.preferredWidth: 0
+                            wrapMode: Text.Wrap
                             visible: modelData.reason !== ""
                         }
 
@@ -287,7 +310,8 @@ Item {
                             font.pixelSize: 11
                             color: Theme.textSecondary
                             Layout.fillWidth: true
-                            wrapMode: Text.WordWrap
+                            Layout.preferredWidth: 0
+                            wrapMode: Text.Wrap
                             visible: modelData.location !== ""
                         }
                     }
@@ -319,7 +343,8 @@ Item {
                                 font.pixelSize: 11
                                 color: modelData.docModified ? Theme.statusError : Theme.textSecondary
                                 Layout.fillWidth: true
-                                wrapMode: Text.WordWrap
+                                Layout.preferredWidth: 0
+                                wrapMode: Text.Wrap
                             }
                         }
 
@@ -335,11 +360,16 @@ Item {
                                 Layout.alignment: Qt.AlignTop
                             }
                             Text {
-                                text: modelData.trustStatus === "trusted" ? "Signer's identity is trusted" : "Signer's certificate is not in your trusted list"
+                                text: {
+                                    if (modelData.trustStatus === "trusted") return "Signer's identity is trusted"
+                                    if (modelData.trustStatus === "expired") return "Signer's certificate has expired"
+                                    return "Signer's certificate is not in your trusted list"
+                                }
                                 font.pixelSize: 11
                                 color: modelData.trustStatus === "trusted" ? Theme.statusSuccess : Theme.statusWarning
                                 Layout.fillWidth: true
-                                wrapMode: Text.WordWrap
+                                Layout.preferredWidth: 0
+                                wrapMode: Text.Wrap
                             }
                         }
                     }
@@ -348,12 +378,12 @@ Item {
                     RowLayout {
                         Layout.fillWidth: true
                         Layout.topMargin: 4
-                        spacing: 8
+                        spacing: 6
 
                         // Trust / Untrust Button
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 30
+                            Layout.preferredHeight: 28
                             radius: 4
                             color: modelData.trustStatus === "trusted"
                                 ? (cardTrustMouse.containsMouse ? Theme.buttonHover : "transparent")
@@ -361,19 +391,27 @@ Item {
                             border.color: modelData.trustStatus === "trusted" ? Theme.borderSubtle : "transparent"
                             border.width: 1
 
-                            Row {
-                                anchors.centerIn: parent
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 6
+                                anchors.rightMargin: 6
                                 spacing: 4
+
                                 Text {
                                     text: modelData.trustStatus === "trusted" ? "✖" : "🛡"
                                     font.pixelSize: 11
                                     color: modelData.trustStatus === "trusted" ? Theme.statusError : "#FFFFFF"
+                                    Layout.alignment: Qt.AlignVCenter
                                 }
                                 Text {
                                     text: modelData.trustStatus === "trusted" ? "Remove Trust" : "Trust Certificate"
                                     font.pixelSize: Theme.fontSizeSmall
                                     font.bold: true
                                     color: modelData.trustStatus === "trusted" ? Theme.statusError : "#FFFFFF"
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                    Layout.preferredWidth: 0
+                                    Layout.alignment: Qt.AlignVCenter
                                 }
                             }
 
@@ -394,8 +432,8 @@ Item {
 
                         // Certificate Details Button
                         Rectangle {
-                            Layout.preferredWidth: 72
-                            Layout.preferredHeight: 30
+                            Layout.preferredWidth: 64
+                            Layout.preferredHeight: 28
                             radius: 4
                             color: detMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
                             border.color: Theme.borderSubtle
@@ -403,7 +441,7 @@ Item {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: "Details..."
+                                text: "Details"
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.brandPrimary
                             }
