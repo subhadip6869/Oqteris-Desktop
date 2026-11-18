@@ -8,6 +8,19 @@ ListView {
     boundsBehavior: Flickable.StopAtBounds
     spacing: 16
 
+    // -----------------------------------------------------------------------
+    // Memory optimisation: delegate recycling
+    // -----------------------------------------------------------------------
+    // cacheBuffer controls how many *extra* pixels above/below the viewport Qt
+    // pre-instantiates delegates in.  Setting it to 0 means only the delegates
+    // that are actually visible are alive at any time, so a 500-page PDF never
+    // has more than ~3–5 Image elements in memory simultaneously.
+    // reuseItems: true lets Qt recycle delegate instances instead of destroying
+    // and re-creating them, keeping delegate churn low while still releasing
+    // the QImage references held by off-screen Image elements.
+    cacheBuffer: 0
+    reuseItems: true
+
     model: pdfController.pageCount
 
     ScrollBar.vertical: ScrollBar {

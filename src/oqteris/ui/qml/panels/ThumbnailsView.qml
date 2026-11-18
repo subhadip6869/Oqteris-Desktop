@@ -8,6 +8,12 @@ ListView {
     clip: true
     boundsBehavior: Flickable.StopAtBounds
 
+    // Keep only visible thumbnail delegates alive; recycle instances on scroll.
+    // A single thumbnail is ~30–50 KB so without this limit a 500-page PDF
+    // would hold 500 Images in memory inside the side panel.
+    cacheBuffer: 0
+    reuseItems: true
+
     model: pdfController.pageCount
 
     delegate: Item {

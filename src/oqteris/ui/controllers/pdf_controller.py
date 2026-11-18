@@ -231,7 +231,7 @@ class PDFController(QObject):
         was_active = (target_id == self.activeDocId)
 
         if self._image_provider:
-            self._image_provider.cache.invalidate_document(target_id)
+            self._image_provider.invalidate_document(target_id)
 
         self._doc_manager.close_document(target_id)
         if was_active:
@@ -364,9 +364,9 @@ class PDFController(QObject):
             return
         if self._image_provider:
             if page_index >= 0:
-                self._image_provider.cache.invalidate_page(doc.doc_id, page_index)
+                self._image_provider.invalidate_page(doc.doc_id, page_index)
             else:
-                self._image_provider.cache.invalidate_document(doc.doc_id)
+                self._image_provider.invalidate_document(doc.doc_id)
 
         self._render_nonce += 1
         self.renderInvalidated.emit(page_index)
