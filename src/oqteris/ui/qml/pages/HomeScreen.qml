@@ -1,12 +1,12 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 import "../themes"
 
 Rectangle {
     id: homeRoot
-    color: appController.isDarkMode ? "#0F1115" : "#F4F7FB"
+    color: Theme.windowBackground
 
     property string filterQuery: ""
 
@@ -195,8 +195,8 @@ Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 64
                     radius: 10
-                    color: openMouse.containsMouse ? (appController.isDarkMode ? "#252830" : "#F8FAFC") : (appController.isDarkMode ? "#1B1D22" : "#FFFFFF")
-                    border.color: openMouse.containsMouse ? "#3B82F6" : (appController.isDarkMode ? "#2F333B" : "#E2E8F0")
+                    color: openMouse.containsMouse ? (Theme.isDark ? "#353535" : "#F8FAFC") : Theme.cardBackground
+                    border.color: openMouse.containsMouse ? Theme.brandPrimary : Theme.borderSubtle
                     border.width: 1
 
                     RowLayout {
@@ -284,8 +284,8 @@ Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 64
                     radius: 10
-                    color: secMouse.containsMouse ? (appController.isDarkMode ? "#252830" : "#F8FAFC") : (appController.isDarkMode ? "#1B1D22" : "#FFFFFF")
-                    border.color: secMouse.containsMouse ? "#10B981" : (appController.isDarkMode ? "#2F333B" : "#E2E8F0")
+                    color: secMouse.containsMouse ? (Theme.isDark ? "#353535" : "#F8FAFC") : Theme.cardBackground
+                    border.color: secMouse.containsMouse ? "#10B981" : Theme.borderSubtle
                     border.width: 1
 
                     RowLayout {
@@ -369,8 +369,8 @@ Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 64
                     radius: 10
-                    color: setMouse.containsMouse ? (appController.isDarkMode ? "#252830" : "#F8FAFC") : (appController.isDarkMode ? "#1B1D22" : "#FFFFFF")
-                    border.color: setMouse.containsMouse ? "#6366F1" : (appController.isDarkMode ? "#2F333B" : "#E2E8F0")
+                    color: setMouse.containsMouse ? (Theme.isDark ? "#353535" : "#F8FAFC") : Theme.cardBackground
+                    border.color: setMouse.containsMouse ? Theme.brandPrimary : Theme.borderSubtle
                     border.width: 1
 
                     RowLayout {
@@ -438,7 +438,7 @@ Rectangle {
                     Rectangle {
                         anchors.fill: parent
                         radius: 10
-                        color: dropZoneItem.isHovered ? (appController.isDarkMode ? "#202636" : "#EFF6FF") : (appController.isDarkMode ? "#16181D" : "#F8FAFC")
+                        color: dropZoneItem.isHovered ? (Theme.isDark ? "#283548" : "#EFF6FF") : Theme.cardBackground
                     }
 
                     // Dashed Border Canvas
@@ -448,7 +448,7 @@ Rectangle {
                         onPaint: {
                             var ctx = getContext("2d");
                             ctx.reset();
-                            ctx.strokeStyle = dropZoneItem.isHovered ? "#3B82F6" : (appController.isDarkMode ? "#4B5563" : "#CBD5E1");
+                            ctx.strokeStyle = dropZoneItem.isHovered ? Theme.brandPrimary : Theme.borderSubtle;
                             ctx.lineWidth = 1.5;
                             ctx.setLineDash([5, 4]);
 
@@ -591,9 +591,9 @@ Rectangle {
                         Layout.preferredWidth: 200
                         Layout.preferredHeight: 30
                         radius: 6
-                        color: appController.isDarkMode ? "#1B1D22" : "#FFFFFF"
-                        border.color: filterInput.activeFocus ? "#2563EB" : "#93C5FD"
-                        border.width: 1.5
+                        color: Theme.cardBackground
+                        border.color: filterInput.activeFocus ? Theme.borderFocused : Theme.borderSubtle
+                        border.width: 1
 
                         TextInput {
                             id: filterInput
@@ -603,7 +603,7 @@ Rectangle {
                             verticalAlignment: TextInput.AlignVCenter
                             font.pixelSize: 11
                             font.family: Theme.fontFamily
-                            color: appController.isDarkMode ? "#F1F5F9" : "#0F172A"
+                            color: Theme.textPrimary
                             clip: true
                             onTextChanged: homeRoot.filterQuery = text
 
@@ -614,7 +614,7 @@ Rectangle {
                                 verticalAlignment: Text.AlignVCenter
                                 font.pixelSize: 11
                                 font.family: Theme.fontFamily
-                                color: appController.isDarkMode ? "#64748B" : "#94A3B8"
+                                color: Theme.textSecondary
                             }
                         }
                     }
@@ -624,8 +624,8 @@ Rectangle {
                         Layout.preferredWidth: clearHistoryText.implicitWidth + 20
                         Layout.preferredHeight: 30
                         radius: 6
-                        color: clearMouse.containsMouse ? (appController.isDarkMode ? "#2D3036" : "#E2E8F0") : (appController.isDarkMode ? "#1B1D22" : "#F8FAFC")
-                        border.color: appController.isDarkMode ? "#383C44" : "#CBD5E1"
+                        color: clearMouse.containsMouse ? Theme.buttonHover : Theme.cardBackground
+                        border.color: Theme.borderSubtle
                         border.width: 1
 
                         Text {
@@ -634,7 +634,7 @@ Rectangle {
                             text: "Clear History"
                             font.pixelSize: 11
                             font.family: Theme.fontFamily
-                            color: appController.isDarkMode ? "#D4D4D8" : "#334155"
+                            color: Theme.textPrimary
                         }
 
                         MouseArea {
@@ -665,8 +665,8 @@ Rectangle {
                             width: recentListView.width
                             height: 52
                             radius: 8
-                            color: itemMouse.containsMouse ? (appController.isDarkMode ? "#242730" : "#F8FAFC") : (appController.isDarkMode ? "#181A1F" : "#FFFFFF")
-                            border.color: itemMouse.containsMouse ? "#CBD5E1" : (appController.isDarkMode ? "#2E323A" : "#E2E8F0")
+                            color: itemMouse.containsMouse ? (Theme.isDark ? "#353535" : "#F8FAFC") : Theme.cardBackground
+                            border.color: itemMouse.containsMouse ? Theme.borderFocused : Theme.borderSubtle
                             border.width: 1
 
                             RowLayout {

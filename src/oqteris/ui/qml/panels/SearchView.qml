@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import "../components"
 import "../themes"
 
 Item {
@@ -94,11 +95,9 @@ Item {
 
         Row {
             spacing: 8
-            CheckBox {
+            OqCheckBox {
                 id: caseCheck
                 text: "Match Case"
-                font.pixelSize: Theme.fontSizeSmall
-                font.family: Theme.fontFamily
             }
         }
 

@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import "../components"
 import "../themes"
 
 Dialog {
@@ -37,13 +38,13 @@ Dialog {
         }
 
         Row {
-            spacing: 12
-            CheckBox {
+            spacing: 16
+            OqCheckBox {
                 id: deskewCheck
                 text: "OpenCV Deskew"
                 checked: true
             }
-            CheckBox {
+            OqCheckBox {
                 id: binarizeCheck
                 text: "Enhance Contrast"
                 checked: false
@@ -72,7 +73,7 @@ Dialog {
                         color: Theme.textPrimary
                     }
                 }
-                Button {
+                OqButton {
                     text: "Browse"
                     height: 28
                     onClicked: fileDialogLoader.saveOcrFileAs()
@@ -106,8 +107,9 @@ Dialog {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 12
 
-            Button {
+            OqButton {
                 text: "Start OCR"
+                isPrimary: true
                 enabled: ocrController.isTesseractAvailable && ocrOutInput.text.length > 0
                 onClicked: {
                     ocrController.runOcr(
@@ -119,7 +121,7 @@ Dialog {
                 }
             }
 
-            Button {
+            OqButton {
                 text: "Cancel"
                 onClicked: {
                     ocrController.cancelOcr()

@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 import "../themes"
@@ -139,7 +139,7 @@ Dialog {
                             }
                         }
 
-                        Button {
+                        OqButton {
                             text: "Remove"
                             Layout.preferredHeight: 26
                             onClicked: {
@@ -185,7 +185,7 @@ Dialog {
             Layout.fillWidth: true
             spacing: 10
 
-            Button {
+            OqButton {
                 text: "Import Certificate..."
                 onClicked: {
                     fileDialogLoader.openCertificate()
@@ -194,9 +194,9 @@ Dialog {
 
             Item { Layout.fillWidth: true }
 
-            Button {
+            OqButton {
                 text: "Close"
-                highlighted: true
+                isPrimary: true
                 onClicked: root.close()
             }
         }

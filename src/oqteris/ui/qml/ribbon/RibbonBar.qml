@@ -13,19 +13,64 @@ Rectangle {
     Column {
         anchors.fill: parent
 
-        // Top: Ribbon Tabs Header Bar
+        // Top: Ribbon Tabs Header Bar (Native Desktop Ribbon Header)
         Rectangle {
             id: tabBar
             width: parent.width
-            height: 32
+            height: 34
             color: Theme.windowBackground
 
+            // Left: Quick Action Tools + Ribbon Tabs
             Row {
                 anchors.left: parent.left
                 anchors.leftMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
+                spacing: 3
 
+                // Quick Action Buttons
+                OqToolButton {
+                    iconName: "folder-open"
+                    tooltipText: "Open Document"
+                    shortcutText: "Ctrl+O"
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: fileDialogLoader.openFile()
+                }
+
+                OqToolButton {
+                    iconName: "save"
+                    tooltipText: "Save Document"
+                    shortcutText: "Ctrl+S"
+                    enabled: pdfController.hasDocument && pdfController.isModified
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: pdfController.saveDocument()
+                }
+
+                OqToolButton {
+                    iconName: "undo"
+                    tooltipText: "Undo"
+                    shortcutText: "Ctrl+Z"
+                    enabled: ribbonController.canUndo
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: ribbonController.undo()
+                }
+
+                OqToolButton {
+                    iconName: "redo"
+                    tooltipText: "Redo"
+                    shortcutText: "Ctrl+Y"
+                    enabled: ribbonController.canRedo
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: ribbonController.redo()
+                }
+
+                Rectangle {
+                    width: 1
+                    height: 16
+                    color: Theme.divider
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                // Ribbon Tabs
                 OqTabButton {
                     text: "Home"
                     isSelected: ribbonController.currentTab === "Home"
@@ -84,6 +129,64 @@ Rectangle {
                     text: "Help"
                     isSelected: ribbonController.currentTab === "Help"
                     onClicked: ribbonController.selectTab("Help")
+                }
+            }
+
+            // Right header shortcuts (Default Viewer, Theme, Settings, About)
+            Row {
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 6
+
+                // Default Viewer Pill
+                Rectangle {
+                    id: defaultPill
+                    width: defaultPillText.implicitWidth + 14
+                    height: 22
+                    radius: 11
+                    color: defaultPillMouse.containsMouse
+                        ? (appController.isDarkMode ? "#1E3A8A" : "#DBEAFE")
+                        : (appController.isDefaultViewer ? Theme.statusSuccess : Theme.selectedBackground)
+                    visible: !appController.isDefaultViewer
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        id: defaultPillText
+                        anchors.centerIn: parent
+                        text: "Set as Default PDF Viewer"
+                        font.pixelSize: 10
+                        color: appController.isDarkMode ? "#93C5FD" : Theme.brandPrimary
+                    }
+
+                    MouseArea {
+                        id: defaultPillMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: appController.requestMakeDefaultViewer()
+                    }
+                }
+
+                OqToolButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    iconName: appController.isDarkMode ? "theme-light" : "theme-dark"
+                    tooltipText: "Toggle Theme"
+                    onClicked: appController.toggleTheme()
+                }
+
+                OqToolButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    iconName: "settings"
+                    tooltipText: "Settings"
+                    onClicked: settingsDialogLoader.openSettingsDialog()
+                }
+
+                OqToolButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    iconName: "properties"
+                    tooltipText: "About Oqteris"
+                    onClicked: aboutDialogLoader.openAboutDialog()
                 }
             }
 

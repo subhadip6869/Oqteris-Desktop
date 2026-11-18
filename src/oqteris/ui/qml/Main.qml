@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import QtQuick.Dialogs
 import "components"
 import "dialogs"
@@ -41,130 +41,7 @@ ApplicationWindow {
     Column {
         anchors.fill: parent
 
-        // 1. Quick-Access Toolbar & Window Header (Shown when document is open)
-        Rectangle {
-            id: quickAccessBar
-            width: parent.width
-            height: pdfController.hasDocument ? 34 : 0
-            visible: pdfController.hasDocument
-            clip: true
-            color: Theme.titleBarBackground
-            border.color: Theme.borderSubtle
-            border.width: 1
-
-            Row {
-                anchors.left: parent.left
-                anchors.leftMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 4
-
-                // App Brand Name
-                Row {
-                    spacing: 6
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    Text {
-                        text: appController.appName
-                        font.bold: true
-                        font.pixelSize: 13
-                        font.family: Theme.fontFamily
-                        color: Theme.brandPrimary
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-
-                Rectangle { width: 1; height: 18; color: Theme.divider; anchors.verticalCenter: parent.verticalCenter }
-
-                // Quick Action Buttons
-                OqToolButton {
-                    iconName: "folder-open"
-                    tooltipText: "Open Document"
-                    shortcutText: "Ctrl+O"
-                    onClicked: fileDialogLoader.openFile()
-                }
-
-                OqToolButton {
-                    iconName: "save"
-                    tooltipText: "Save Document"
-                    shortcutText: "Ctrl+S"
-                    enabled: pdfController.hasDocument && pdfController.isModified
-                    onClicked: pdfController.saveDocument()
-                }
-
-                OqToolButton {
-                    iconName: "undo"
-                    tooltipText: "Undo"
-                    shortcutText: "Ctrl+Z"
-                    enabled: ribbonController.canUndo
-                    onClicked: ribbonController.undo()
-                }
-
-                OqToolButton {
-                    iconName: "redo"
-                    tooltipText: "Redo"
-                    shortcutText: "Ctrl+Y"
-                    enabled: ribbonController.canRedo
-                    onClicked: ribbonController.redo()
-                }
-            }
-
-            // Right header shortcuts (Theme, Settings, About)
-            Row {
-                anchors.right: parent.right
-                anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 6
-
-                // Default Viewer Pill
-                Rectangle {
-                    id: defaultPill
-                    width: defaultPillText.implicitWidth + 14
-                    height: 22
-                    radius: 11
-                    color: defaultPillMouse.containsMouse
-                        ? (appController.isDarkMode ? "#1E3A8A" : "#DBEAFE")
-                        : (appController.isDefaultViewer ? Theme.statusSuccess : Theme.selectedBackground)
-                    visible: !appController.isDefaultViewer
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    Text {
-                        id: defaultPillText
-                        anchors.centerIn: parent
-                        text: "Set as Default PDF Viewer"
-                        font.pixelSize: 10
-                        color: appController.isDarkMode ? "#93C5FD" : Theme.brandPrimary
-                    }
-
-                    MouseArea {
-                        id: defaultPillMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: appController.requestMakeDefaultViewer()
-                    }
-                }
-
-                OqToolButton {
-                    iconName: appController.isDarkMode ? "theme-light" : "theme-dark"
-                    tooltipText: "Toggle Theme"
-                    onClicked: appController.toggleTheme()
-                }
-
-                OqToolButton {
-                    iconName: "settings"
-                    tooltipText: "Settings"
-                    onClicked: settingsDialogLoader.openSettingsDialog()
-                }
-
-                OqToolButton {
-                    iconName: "properties"
-                    tooltipText: "About Oqteris"
-                    onClicked: aboutDialogLoader.openAboutDialog()
-                }
-            }
-        }
-
-        // 2. Main Ribbon Bar (Shown when document is open)
+        // 1. Main Ribbon Bar (Shown when document is open)
         RibbonBar {
             id: mainRibbon
             width: parent.width
@@ -173,10 +50,10 @@ ApplicationWindow {
             clip: true
         }
 
-        // 3. Central Application Workspace Area
+        // 2. Central Application Workspace Area
         Row {
             width: parent.width
-            height: parent.height - (pdfController.hasDocument ? (quickAccessBar.height + mainRibbon.height) : 0)
+            height: parent.height - (pdfController.hasDocument ? mainRibbon.height : 0)
 
             // Left Navigation Drawer
             NavigationPanel {

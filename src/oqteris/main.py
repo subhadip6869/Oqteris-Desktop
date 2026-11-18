@@ -10,6 +10,7 @@ from pathlib import Path
 from PySide6.QtCore import QCoreApplication, Qt, QUrl
 from PySide6.QtGui import QIcon
 from PySide6.QtQml import QQmlApplicationEngine
+from PySide6.QtQuickControls2 import QQuickStyle
 from PySide6.QtWidgets import QApplication
 
 from oqteris.application.single_instance import SingleInstanceCoordinator
@@ -48,10 +49,11 @@ def main() -> int:
     setup_logging()
     logger.info("Starting %s v%s", APP_NAME, APP_VERSION)
 
-    # Step 2: High DPI scaling and Qt attributes
+    # Step 2: High DPI scaling and native desktop style
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
     )
+    QQuickStyle.setStyle("Fusion")
 
     # Step 3: Initialize Qt Application
     app = QApplication(sys.argv)

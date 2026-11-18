@@ -1,0 +1,10 @@
+module components
+OqButton 1.0 OqButton.qml
+OqCheckBox 1.0 OqCheckBox.qml
+OqRadioButton 1.0 OqRadioButton.qml
+OqSlider 1.0 OqSlider.qml
+OqIcon 1.0 OqIcon.qml
+OqRibbonButton 1.0 OqRibbonButton.qml
+OqRibbonGroup 1.0 OqRibbonGroup.qml
+OqTabButton 1.0 OqTabButton.qml
+OqToolButton 1.0 OqToolButton.qml
