@@ -45,7 +45,7 @@ ApplicationWindow {
         RibbonBar {
             id: mainRibbon
             width: parent.width
-            height: pdfController.hasDocument ? 124 : 0
+            height: pdfController.hasDocument ? mainRibbon.implicitHeight : 0
             visible: pdfController.hasDocument
             clip: true
         }

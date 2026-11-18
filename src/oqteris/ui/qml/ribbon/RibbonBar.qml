@@ -5,7 +5,7 @@ import "../themes"
 Rectangle {
     id: root
 
-    implicitHeight: 124
+    implicitHeight: quickMenuBar.height + tabBar.height + contentArea.height
     color: Theme.ribbonBackground
     border.color: Theme.borderSubtle
     border.width: 1
@@ -13,21 +13,20 @@ Rectangle {
     Column {
         anchors.fill: parent
 
-        // Top: Ribbon Tabs Header Bar (Native Desktop Ribbon Header)
+        // 1. Top: Quick Menus Toolbar (Quick Actions & App Utilities)
         Rectangle {
-            id: tabBar
+            id: quickMenuBar
             width: parent.width
-            height: 34
+            height: 30
             color: Theme.windowBackground
 
-            // Left: Quick Action Tools + Ribbon Tabs
+            // Left: Quick Action Buttons
             Row {
                 anchors.left: parent.left
                 anchors.leftMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 3
 
-                // Quick Action Buttons
                 OqToolButton {
                     iconName: "folder-open"
                     tooltipText: "Open Document"
@@ -61,74 +60,6 @@ Rectangle {
                     enabled: ribbonController.canRedo
                     anchors.verticalCenter: parent.verticalCenter
                     onClicked: ribbonController.redo()
-                }
-
-                Rectangle {
-                    width: 1
-                    height: 16
-                    color: Theme.divider
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                // Ribbon Tabs
-                OqTabButton {
-                    text: "Home"
-                    isSelected: ribbonController.currentTab === "Home"
-                    onClicked: ribbonController.selectTab("Home")
-                }
-
-                OqTabButton {
-                    text: "View"
-                    isSelected: ribbonController.currentTab === "View"
-                    onClicked: ribbonController.selectTab("View")
-                }
-
-                OqTabButton {
-                    text: "Edit"
-                    isSelected: ribbonController.currentTab === "Edit"
-                    onClicked: ribbonController.selectTab("Edit")
-                }
-
-                OqTabButton {
-                    text: "Comment"
-                    isSelected: ribbonController.currentTab === "Comment"
-                    onClicked: ribbonController.selectTab("Comment")
-                }
-
-                OqTabButton {
-                    text: "Organize"
-                    isSelected: ribbonController.currentTab === "Organize"
-                    onClicked: ribbonController.selectTab("Organize")
-                }
-
-                OqTabButton {
-                    text: "Convert"
-                    isSelected: ribbonController.currentTab === "Convert"
-                    onClicked: ribbonController.selectTab("Convert")
-                }
-
-                OqTabButton {
-                    text: "Fill & Sign"
-                    isSelected: ribbonController.currentTab === "FillSign"
-                    onClicked: ribbonController.selectTab("FillSign")
-                }
-
-                OqTabButton {
-                    text: "Protect"
-                    isSelected: ribbonController.currentTab === "Protect"
-                    onClicked: ribbonController.selectTab("Protect")
-                }
-
-                OqTabButton {
-                    text: "Share"
-                    isSelected: ribbonController.currentTab === "Share"
-                    onClicked: ribbonController.selectTab("Share")
-                }
-
-                OqTabButton {
-                    text: "Help"
-                    isSelected: ribbonController.currentTab === "Help"
-                    onClicked: ribbonController.selectTab("Help")
                 }
             }
 
@@ -198,7 +129,90 @@ Rectangle {
             }
         }
 
-        // Bottom: Ribbon Command Groups Container
+        // 2. Middle: Ribbon Menu Bar (Tabs Header Bar below Quick Menus)
+        Rectangle {
+            id: tabBar
+            width: parent.width
+            height: 30
+            color: Theme.windowBackground
+
+            // Ribbon Tabs
+            Row {
+                anchors.left: parent.left
+                anchors.leftMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+
+                OqTabButton {
+                    text: "Home"
+                    isSelected: ribbonController.currentTab === "Home"
+                    onClicked: ribbonController.selectTab("Home")
+                }
+
+                OqTabButton {
+                    text: "View"
+                    isSelected: ribbonController.currentTab === "View"
+                    onClicked: ribbonController.selectTab("View")
+                }
+
+                OqTabButton {
+                    text: "Edit"
+                    isSelected: ribbonController.currentTab === "Edit"
+                    onClicked: ribbonController.selectTab("Edit")
+                }
+
+                OqTabButton {
+                    text: "Comment"
+                    isSelected: ribbonController.currentTab === "Comment"
+                    onClicked: ribbonController.selectTab("Comment")
+                }
+
+                OqTabButton {
+                    text: "Organize"
+                    isSelected: ribbonController.currentTab === "Organize"
+                    onClicked: ribbonController.selectTab("Organize")
+                }
+
+                OqTabButton {
+                    text: "Convert"
+                    isSelected: ribbonController.currentTab === "Convert"
+                    onClicked: ribbonController.selectTab("Convert")
+                }
+
+                OqTabButton {
+                    text: "Fill & Sign"
+                    isSelected: ribbonController.currentTab === "FillSign"
+                    onClicked: ribbonController.selectTab("FillSign")
+                }
+
+                OqTabButton {
+                    text: "Protect"
+                    isSelected: ribbonController.currentTab === "Protect"
+                    onClicked: ribbonController.selectTab("Protect")
+                }
+
+                OqTabButton {
+                    text: "Share"
+                    isSelected: ribbonController.currentTab === "Share"
+                    onClicked: ribbonController.selectTab("Share")
+                }
+
+                OqTabButton {
+                    text: "Help"
+                    isSelected: ribbonController.currentTab === "Help"
+                    onClicked: ribbonController.selectTab("Help")
+                }
+            }
+
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: 1
+                color: Theme.divider
+            }
+        }
+
+        // 3. Bottom: Ribbon Command Groups Container
         Item {
             id: contentArea
             width: parent.width
