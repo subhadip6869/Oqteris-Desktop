@@ -41,6 +41,62 @@ Rectangle {
         }
     }
 
+    // ==========================================
+    // Top-Right Header Actions: Set Default, Theme Toggle, About Oqteris
+    // ==========================================
+    Row {
+        id: topRightActions
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.topMargin: 24
+        anchors.rightMargin: 36
+        spacing: 8
+        z: 10
+
+        // Default Viewer Pill
+        Rectangle {
+            id: defaultPill
+            width: defaultPillText.implicitWidth + 14
+            height: 22
+            radius: 11
+            anchors.verticalCenter: parent.verticalCenter
+            color: pillMouse.containsMouse
+                ? (appController.isDarkMode ? "#1E3A8A" : "#DBEAFE")
+                : (appController.isDefaultViewer ? Theme.statusSuccess : Theme.selectedBackground)
+            visible: !appController.isDefaultViewer
+
+            Text {
+                id: defaultPillText
+                anchors.centerIn: parent
+                text: "Set as Default PDF Viewer"
+                font.pixelSize: 10
+                color: appController.isDarkMode ? "#93C5FD" : Theme.brandPrimary
+            }
+
+            MouseArea {
+                id: pillMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: appController.requestMakeDefaultViewer()
+            }
+        }
+
+        OqToolButton {
+            anchors.verticalCenter: parent.verticalCenter
+            iconName: appController.isDarkMode ? "theme-light" : "theme-dark"
+            tooltipText: "Toggle Theme"
+            onClicked: appController.toggleTheme()
+        }
+
+        OqToolButton {
+            anchors.verticalCenter: parent.verticalCenter
+            iconName: "properties"
+            tooltipText: "About Oqteris"
+            onClicked: aboutDialogLoader.openAboutDialog()
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.topMargin: 24

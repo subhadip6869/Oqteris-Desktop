@@ -117,10 +117,13 @@ ApplicationWindow {
 
                 // Default Viewer Pill
                 Rectangle {
+                    id: defaultPill
                     width: defaultPillText.implicitWidth + 14
                     height: 22
                     radius: 11
-                    color: appController.isDefaultViewer ? Theme.statusSuccess : Theme.selectedBackground
+                    color: defaultPillMouse.containsMouse
+                        ? (appController.isDarkMode ? "#1E3A8A" : "#DBEAFE")
+                        : (appController.isDefaultViewer ? Theme.statusSuccess : Theme.selectedBackground)
                     visible: !appController.isDefaultViewer
                     anchors.verticalCenter: parent.verticalCenter
 
@@ -129,11 +132,13 @@ ApplicationWindow {
                         anchors.centerIn: parent
                         text: "Set as Default PDF Viewer"
                         font.pixelSize: 10
-                        color: Theme.brandPrimary
+                        color: appController.isDarkMode ? "#93C5FD" : Theme.brandPrimary
                     }
 
                     MouseArea {
+                        id: defaultPillMouse
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: appController.requestMakeDefaultViewer()
                     }
