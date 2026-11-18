@@ -6,61 +6,105 @@ Item {
     id: root
 
     property string text: ""
-    property string iconSymbol: ""  // Unicode icon character or symbol
-    property string iconSource: ""
+    property string iconName: ""
+    property string iconSymbol: ""
     property bool isLarge: true
     property bool isChecked: false
+    property bool hasDropdown: false
     property string tooltipText: ""
     property string shortcutText: ""
 
     signal clicked()
 
-    implicitWidth: isLarge ? Math.max(54, btnText.implicitWidth + 12) : Math.max(48, rowContent.implicitWidth + 12)
-    implicitHeight: isLarge ? 68 : 30
+    implicitWidth: isLarge
+        ? Math.max(46, Math.max(btnText.implicitWidth + 10, (hasDropdown ? dropdownRow.implicitWidth + 6 : 38)))
+        : Math.max(42, rowContent.implicitWidth + 8)
+    implicitHeight: isLarge ? 64 : 26
 
     Rectangle {
         id: bg
         anchors.fill: parent
-        radius: 3
+        radius: root.isChecked ? 5 : 4
         color: {
             if (!root.enabled) return "transparent"
-            if (mouseArea.pressed) return Theme.buttonPressed
-            if (root.isChecked) return Theme.selectedBackground
-            if (mouseArea.containsMouse) return Theme.buttonHover
+            if (mouseArea.pressed) return appController.isDarkMode ? "#333842" : "#E2E8F0"
+            if (root.isChecked) return appController.isDarkMode ? "#1E293B" : "#EFF6FF"
+            if (mouseArea.containsMouse) return appController.isDarkMode ? "#272A30" : "#F1F5F9"
             return "transparent"
         }
-        border.color: root.isChecked ? Theme.brandPrimary : "transparent"
-        border.width: 1
+        border.color: {
+            if (root.isChecked) return "#2563EB"
+            if (mouseArea.containsMouse) return appController.isDarkMode ? "#3F4450" : "#CBD5E1"
+            return "transparent"
+        }
+        border.width: root.isChecked ? 1.5 : 1
 
-        Behavior on color { ColorAnimation { duration: 100 } }
+        Behavior on color { ColorAnimation { duration: 80 } }
 
         // Large button layout: Vertical (Icon top, Label bottom)
         Column {
             anchors.centerIn: parent
-            spacing: 2
+            spacing: 3
             visible: root.isLarge
 
-            Text {
-                id: iconTextLarge
-                text: root.iconSymbol
-                font.pixelSize: 22
-                font.family: "Segoe UI Symbol, sans-serif"
-                horizontalAlignment: Text.AlignHCenter
+            Item {
+                id: iconContainer
+                width: 24
+                height: 24
                 anchors.horizontalCenter: parent.horizontalCenter
-                color: root.enabled ? (root.isChecked ? Theme.brandPrimary : Theme.textPrimary) : Theme.textDisabled
+
+                OqIcon {
+                    id: oqIconLarge
+                    anchors.centerIn: parent
+                    size: 22
+                    name: root.iconName
+                    color: root.enabled
+                        ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#60A5FA" : "#2563EB"))
+                        : Theme.textDisabled
+                    visible: root.iconName.length > 0
+                }
+
+                Text {
+                    id: iconTextLarge
+                    anchors.centerIn: parent
+                    text: root.iconSymbol
+                    font.pixelSize: 18
+                    font.family: "Segoe UI Symbol, sans-serif"
+                    color: root.enabled
+                        ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#60A5FA" : "#2563EB"))
+                        : Theme.textDisabled
+                    visible: root.iconName.length === 0 && root.iconSymbol.length > 0
+                }
             }
 
-            Text {
-                id: btnText
-                text: root.text
-                font.pixelSize: Theme.fontSizeSmall
-                font.family: Theme.fontFamily
-                horizontalAlignment: Text.AlignHCenter
+            Row {
+                id: dropdownRow
                 anchors.horizontalCenter: parent.horizontalCenter
-                color: root.enabled ? Theme.textPrimary : Theme.textDisabled
-                elide: Text.ElideRight
-                maximumLineCount: 2
-                wrapMode: Text.WordWrap
+                spacing: 3
+
+                Text {
+                    id: btnText
+                    text: root.text
+                    font.pixelSize: 11
+                    font.family: Theme.fontFamily
+                    font.weight: root.isChecked ? Font.DemiBold : Font.Normal
+                    horizontalAlignment: Text.AlignHCenter
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: root.enabled
+                        ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#F1F5F9" : "#1E293B"))
+                        : Theme.textDisabled
+                    elide: Text.ElideRight
+                    maximumLineCount: 2
+                    wrapMode: Text.WordWrap
+                }
+
+                OqIcon {
+                    anchors.verticalCenter: parent.verticalCenter
+                    size: 9
+                    name: "chevron-down"
+                    color: root.enabled ? (appController.isDarkMode ? "#94A3B8" : "#64748B") : Theme.textDisabled
+                    visible: root.hasDropdown
+                }
             }
         }
 
@@ -71,21 +115,45 @@ Item {
             spacing: 6
             visible: !root.isLarge
 
+            OqIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                size: 15
+                name: root.iconName
+                color: root.enabled
+                    ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#60A5FA" : "#2563EB"))
+                    : Theme.textDisabled
+                visible: root.iconName.length > 0
+            }
+
             Text {
                 text: root.iconSymbol
-                font.pixelSize: 14
+                font.pixelSize: 13
                 font.family: "Segoe UI Symbol, sans-serif"
                 anchors.verticalCenter: parent.verticalCenter
-                color: root.enabled ? (root.isChecked ? Theme.brandPrimary : Theme.textPrimary) : Theme.textDisabled
+                color: root.enabled
+                    ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#60A5FA" : "#2563EB"))
+                    : Theme.textDisabled
+                visible: root.iconName.length === 0 && root.iconSymbol.length > 0
             }
 
             Text {
                 text: root.text
-                font.pixelSize: Theme.fontSizeSmall
+                font.pixelSize: 11
                 font.family: Theme.fontFamily
+                font.weight: root.isChecked ? Font.DemiBold : Font.Normal
                 anchors.verticalCenter: parent.verticalCenter
-                color: root.enabled ? Theme.textPrimary : Theme.textDisabled
+                color: root.enabled
+                    ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#F1F5F9" : "#1E293B"))
+                    : Theme.textDisabled
                 visible: root.text.length > 0
+            }
+
+            OqIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                size: 8
+                name: "chevron-down"
+                color: root.enabled ? (appController.isDarkMode ? "#94A3B8" : "#64748B") : Theme.textDisabled
+                visible: root.hasDropdown
             }
         }
 
@@ -99,7 +167,7 @@ Item {
         }
 
         ToolTip.visible: mouseArea.containsMouse && (root.tooltipText.length > 0 || root.shortcutText.length > 0)
-        ToolTip.delay: 400
+        ToolTip.delay: 350
         ToolTip.text: root.shortcutText ? (root.tooltipText + " (" + root.shortcutText + ")") : root.tooltipText
     }
 }

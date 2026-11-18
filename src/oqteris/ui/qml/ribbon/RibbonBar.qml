@@ -75,6 +75,12 @@ Rectangle {
                 }
 
                 OqTabButton {
+                    text: "Share"
+                    isSelected: ribbonController.currentTab === "Share"
+                    onClicked: ribbonController.selectTab("Share")
+                }
+
+                OqTabButton {
                     text: "Help"
                     isSelected: ribbonController.currentTab === "Help"
                     onClicked: ribbonController.selectTab("Help")
@@ -117,6 +123,7 @@ Rectangle {
                             case "Convert": return "ConvertTab.qml"
                             case "FillSign": return "FillSignTab.qml"
                             case "Protect": return "ProtectTab.qml"
+                            case "Share": return "ShareTab.qml"
                             case "Help": return "HelpTab.qml"
                             default: return "HomeTab.qml"
                         }

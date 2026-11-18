@@ -58,16 +58,10 @@ ApplicationWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 4
 
-                // App Brand Name & Icon
+                // App Brand Name
                 Row {
                     spacing: 6
                     anchors.verticalCenter: parent.verticalCenter
-
-                    Text {
-                        text: "🔷"
-                        font.pixelSize: 15
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
 
                     Text {
                         text: appController.appName
@@ -83,14 +77,14 @@ ApplicationWindow {
 
                 // Quick Action Buttons
                 OqToolButton {
-                    iconSymbol: "📂"
+                    iconName: "folder-open"
                     tooltipText: "Open Document"
                     shortcutText: "Ctrl+O"
                     onClicked: fileDialogLoader.openFile()
                 }
 
                 OqToolButton {
-                    iconSymbol: "💾"
+                    iconName: "save"
                     tooltipText: "Save Document"
                     shortcutText: "Ctrl+S"
                     enabled: pdfController.hasDocument && pdfController.isModified
@@ -98,7 +92,7 @@ ApplicationWindow {
                 }
 
                 OqToolButton {
-                    iconSymbol: "↩"
+                    iconName: "undo"
                     tooltipText: "Undo"
                     shortcutText: "Ctrl+Z"
                     enabled: ribbonController.canUndo
@@ -106,7 +100,7 @@ ApplicationWindow {
                 }
 
                 OqToolButton {
-                    iconSymbol: "↪"
+                    iconName: "redo"
                     tooltipText: "Redo"
                     shortcutText: "Ctrl+Y"
                     enabled: ribbonController.canRedo
@@ -146,19 +140,19 @@ ApplicationWindow {
                 }
 
                 OqToolButton {
-                    iconSymbol: appController.isDarkMode ? "☀" : "🌙"
+                    iconName: appController.isDarkMode ? "theme-light" : "theme-dark"
                     tooltipText: "Toggle Theme"
                     onClicked: appController.toggleTheme()
                 }
 
                 OqToolButton {
-                    iconSymbol: "⚙"
+                    iconName: "settings"
                     tooltipText: "Settings"
                     onClicked: settingsDialogLoader.openSettingsDialog()
                 }
 
                 OqToolButton {
-                    iconSymbol: "ℹ"
+                    iconName: "properties"
                     tooltipText: "About Oqteris"
                     onClicked: aboutDialogLoader.openAboutDialog()
                 }

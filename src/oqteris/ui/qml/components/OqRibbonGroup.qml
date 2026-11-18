@@ -7,7 +7,7 @@ Item {
     property string title: ""
     default property alias content: contentRow.data
 
-    implicitWidth: Math.max(groupLabel.implicitWidth + 16, contentRow.implicitWidth + 16)
+    implicitWidth: Math.max(groupLabel.implicitWidth + 10, contentRow.implicitWidth + 10)
     implicitHeight: 88
 
     Item {

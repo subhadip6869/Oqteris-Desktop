@@ -96,6 +96,15 @@ class AppController(QObject):
         logo_file = assets_dir / "icons" / "app" / "oqteris-logo.png"
         return QUrl.fromLocalFile(str(logo_file)).toString()
 
+    @Property(str, constant=True)
+    def uiIconsPath(self) -> str:
+        assets_dir = Path(__file__).resolve().parents[4] / "assets" / "icons" / "ui"
+        return QUrl.fromLocalFile(str(assets_dir)).toString()
+
+    @Property(str, constant=True)
+    def ribbonIconsPath(self) -> str:
+        return self.uiIconsPath
+
     # --- Theme Management ---
 
     @Property(str, notify=themeChanged)

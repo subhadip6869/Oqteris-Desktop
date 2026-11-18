@@ -13,7 +13,7 @@ Row {
 
         OqRibbonButton {
             text: "Highlight"
-            iconSymbol: "🖍"
+            iconName: "highlight"
             tooltipText: "Highlight Selected Text"
             isChecked: ribbonController.activeTool === "highlight"
             enabled: pdfController.hasDocument
@@ -22,7 +22,7 @@ Row {
 
         OqRibbonButton {
             text: "Underline"
-            iconSymbol: "<u>U</u>"
+            iconName: "underline"
             tooltipText: "Underline Selected Text"
             isChecked: ribbonController.activeTool === "underline"
             enabled: pdfController.hasDocument
@@ -31,7 +31,7 @@ Row {
 
         OqRibbonButton {
             text: "Strikeout"
-            iconSymbol: "<s>S</s>"
+            iconName: "strikeout"
             tooltipText: "Strikethrough Selected Text"
             isChecked: ribbonController.activeTool === "strikeout"
             enabled: pdfController.hasDocument
@@ -45,7 +45,7 @@ Row {
 
         OqRibbonButton {
             text: "Sticky Note"
-            iconSymbol: "📝"
+            iconName: "note"
             tooltipText: "Place a Sticky Comment Note"
             isChecked: ribbonController.activeTool === "note"
             enabled: pdfController.hasDocument
@@ -54,7 +54,7 @@ Row {
 
         OqRibbonButton {
             text: "Freehand"
-            iconSymbol: "✒"
+            iconName: "draw"
             tooltipText: "Freehand Ink Drawing"
             isChecked: ribbonController.activeTool === "ink"
             enabled: pdfController.hasDocument
@@ -109,7 +109,7 @@ Row {
 
         OqRibbonButton {
             text: "Approved"
-            iconSymbol: "✔"
+            iconName: "stamp"
             tooltipText: "Approved Stamp"
             isChecked: ribbonController.activeTool === "stamp_approved"
             enabled: pdfController.hasDocument
@@ -118,7 +118,7 @@ Row {
 
         OqRibbonButton {
             text: "Confidential"
-            iconSymbol: "🔒"
+            iconName: "lock"
             tooltipText: "Confidential Stamp"
             isChecked: ribbonController.activeTool === "stamp_confidential"
             enabled: pdfController.hasDocument

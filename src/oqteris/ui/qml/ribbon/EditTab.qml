@@ -13,7 +13,7 @@ Row {
 
         OqRibbonButton {
             text: "Add Text"
-            iconSymbol: "🔤"
+            iconName: "select-text"
             tooltipText: "Insert Text into PDF"
             isChecked: ribbonController.activeTool === "add_text"
             enabled: pdfController.hasDocument
@@ -22,7 +22,7 @@ Row {
 
         OqRibbonButton {
             text: "Add Image"
-            iconSymbol: "🖼"
+            iconName: "thumbnails"
             tooltipText: "Insert Image into Page"
             isChecked: ribbonController.activeTool === "add_image"
             enabled: pdfController.hasDocument
@@ -34,7 +34,7 @@ Row {
 
         OqRibbonButton {
             text: "Add Link"
-            iconSymbol: "🔗"
+            iconName: "share"
             tooltipText: "Create Hyperlink"
             isChecked: ribbonController.activeTool === "add_link"
             enabled: pdfController.hasDocument
@@ -48,7 +48,7 @@ Row {
 
         OqRibbonButton {
             text: "Edit Text"
-            iconSymbol: "✏"
+            iconName: "draw"
             tooltipText: "Direct Text Editing & Replacement"
             isChecked: ribbonController.activeTool === "edit_text"
             enabled: pdfController.hasDocument

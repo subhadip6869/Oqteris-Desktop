@@ -5,7 +5,10 @@ import "../themes"
 Item {
     id: root
 
+    property string iconName: ""
     property string iconSymbol: ""
+    property int iconSize: 14
+    property color iconColor: root.enabled ? (appController.isDarkMode ? "#60A5FA" : "#2563EB") : Theme.textDisabled
     property string tooltipText: ""
     property string shortcutText: ""
 
@@ -24,6 +27,14 @@ Item {
             return "transparent"
         }
 
+        OqIcon {
+            anchors.centerIn: parent
+            size: root.iconSize
+            name: root.iconName
+            color: root.iconColor
+            visible: root.iconName.length > 0
+        }
+
         Text {
             anchors.centerIn: parent
             verticalAlignment: Text.AlignVCenter
@@ -31,7 +42,8 @@ Item {
             text: root.iconSymbol
             font.pixelSize: 12
             font.family: "Segoe UI Symbol, Segoe UI, sans-serif"
-            color: root.enabled ? Theme.textPrimary : Theme.textDisabled
+            color: root.iconColor
+            visible: root.iconName.length === 0 && root.iconSymbol.length > 0
         }
 
         MouseArea {

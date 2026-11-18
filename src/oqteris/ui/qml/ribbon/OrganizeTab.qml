@@ -13,7 +13,7 @@ Row {
 
         OqRibbonButton {
             text: "Delete Page"
-            iconSymbol: "🗑"
+            iconName: "delete"
             tooltipText: "Delete Current Page"
             enabled: pdfController.hasDocument && pdfController.pageCount > 1
             onClicked: organizeController.deletePage(pdfController.currentPage)
@@ -21,7 +21,7 @@ Row {
 
         OqRibbonButton {
             text: "Extract Page"
-            iconSymbol: "📤"
+            iconName: "extract"
             tooltipText: "Extract Current Page to New PDF"
             enabled: pdfController.hasDocument
             onClicked: fileDialogLoader.saveExtractedPage()
@@ -29,7 +29,7 @@ Row {
 
         OqRibbonButton {
             text: "Rotate"
-            iconSymbol: "↻"
+            iconName: "rotate"
             tooltipText: "Rotate Page 90° Clockwise"
             enabled: pdfController.hasDocument
             onClicked: pdfController.rotatePage(90)
@@ -42,14 +42,14 @@ Row {
 
         OqRibbonButton {
             text: "Merge PDFs"
-            iconSymbol: "📑+"
+            iconName: "merge"
             tooltipText: "Combine Multiple PDFs into One"
             onClicked: fileDialogLoader.openPdfsToMerge()
         }
 
         OqRibbonButton {
             text: "Split PDF"
-            iconSymbol: "✂"
+            iconName: "split"
             tooltipText: "Split Document into Parts"
             enabled: pdfController.hasDocument && pdfController.pageCount > 1
             onClicked: fileDialogLoader.selectSplitOutputDir()
