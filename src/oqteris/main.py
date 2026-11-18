@@ -26,6 +26,7 @@ from oqteris.core.logging import setup_logging
 from oqteris.database.connection import get_db_manager
 from oqteris.pdf.rendering.image_provider import PDFPageImageProvider
 from oqteris.platform.storage import get_storage_manager
+from oqteris.ui.icon_provider import IconImageProvider
 from oqteris.ui.controllers.annotation_controller import AnnotationController
 from oqteris.ui.controllers.app_controller import AppController
 from oqteris.ui.controllers.organize_controller import (
@@ -80,10 +81,12 @@ def main() -> int:
     # Step 6: Database initialization
     db = get_db_manager()
 
-    # Step 7: QML Engine and Image Provider
+    # Step 7: QML Engine and Image Providers
     engine = QQmlApplicationEngine()
     image_provider = PDFPageImageProvider()
     engine.addImageProvider("pdf", image_provider)
+    icon_provider = IconImageProvider()
+    engine.addImageProvider("icon", icon_provider)
 
     # Step 8: Controllers setup
     app_controller = AppController(parent=app)

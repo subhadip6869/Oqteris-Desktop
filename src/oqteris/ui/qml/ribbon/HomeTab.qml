@@ -61,37 +61,10 @@ Row {
         }
     }
 
-    // Group 2: Clipboard & History (Two rows in two columns)
+    // Group 2: Clipboard
     OqRibbonGroup {
         title: "Clipboard"
 
-        // Column 1: Undo & Redo
-        Column {
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 3
-
-            OqRibbonButton {
-                text: "Undo"
-                iconName: "undo"
-                isLarge: false
-                tooltipText: "Undo Recent Action"
-                shortcutText: "Ctrl+Z"
-                enabled: ribbonController.canUndo
-                onClicked: ribbonController.undo()
-            }
-
-            OqRibbonButton {
-                text: "Redo"
-                iconName: "redo"
-                isLarge: false
-                tooltipText: "Redo Action"
-                shortcutText: "Ctrl+Y"
-                enabled: ribbonController.canRedo
-                onClicked: ribbonController.redo()
-            }
-        }
-
-        // Column 2: Copy & Select All
         Column {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 3
@@ -171,7 +144,7 @@ Row {
                 height: 24
                 radius: 4
                 color: appController.isDarkMode ? "#272A30" : "#F1F5F9"
-                border.color: pageInput.activeFocus ? "#2563EB" : (appController.isDarkMode ? "#3F4450" : "#CBD5E1")
+                border.color: pageInput.activeFocus ? Theme.borderFocused : Theme.borderSubtle
                 border.width: 1
                 anchors.verticalCenter: parent.verticalCenter
 

@@ -24,17 +24,17 @@ Item {
     Rectangle {
         id: bg
         anchors.fill: parent
-        radius: root.isChecked ? 5 : 4
+        radius: root.isChecked ? 4 : 4
         color: {
             if (!root.enabled) return "transparent"
-            if (mouseArea.pressed) return appController.isDarkMode ? "#333842" : "#E2E8F0"
-            if (root.isChecked) return appController.isDarkMode ? "#1E293B" : "#EFF6FF"
-            if (mouseArea.containsMouse) return appController.isDarkMode ? "#272A30" : "#F1F5F9"
+            if (mouseArea.pressed) return Theme.buttonPressed
+            if (root.isChecked) return Theme.selectedBackground
+            if (mouseArea.containsMouse) return Theme.buttonHover
             return "transparent"
         }
         border.color: {
-            if (root.isChecked) return "#2563EB"
-            if (mouseArea.containsMouse) return appController.isDarkMode ? "#3F4450" : "#CBD5E1"
+            if (root.isChecked) return Theme.borderFocused
+            if (mouseArea.containsMouse) return Theme.borderSubtle
             return "transparent"
         }
         border.width: root.isChecked ? 1.5 : 1
@@ -59,7 +59,7 @@ Item {
                     size: 22
                     name: root.iconName
                     color: root.enabled
-                        ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#60A5FA" : "#2563EB"))
+                        ? (root.isChecked ? Theme.brandPrimary : Theme.textPrimary)
                         : Theme.textDisabled
                     visible: root.iconName.length > 0
                 }
@@ -71,7 +71,7 @@ Item {
                     font.pixelSize: 18
                     font.family: "Segoe UI Symbol, sans-serif"
                     color: root.enabled
-                        ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#60A5FA" : "#2563EB"))
+                        ? (root.isChecked ? Theme.brandPrimary : Theme.textPrimary)
                         : Theme.textDisabled
                     visible: root.iconName.length === 0 && root.iconSymbol.length > 0
                 }
@@ -91,7 +91,7 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     anchors.verticalCenter: parent.verticalCenter
                     color: root.enabled
-                        ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#F1F5F9" : "#1E293B"))
+                        ? (root.isChecked ? Theme.brandPrimary : Theme.textPrimary)
                         : Theme.textDisabled
                     elide: Text.ElideRight
                     maximumLineCount: 2
@@ -102,7 +102,9 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     size: 9
                     name: "chevron-down"
-                    color: root.enabled ? (appController.isDarkMode ? "#94A3B8" : "#64748B") : Theme.textDisabled
+                    color: root.enabled
+                        ? (root.isChecked ? Theme.brandPrimary : Theme.textSecondary)
+                        : Theme.textDisabled
                     visible: root.hasDropdown
                 }
             }
@@ -120,7 +122,7 @@ Item {
                 size: 15
                 name: root.iconName
                 color: root.enabled
-                    ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#60A5FA" : "#2563EB"))
+                    ? (root.isChecked ? Theme.brandPrimary : Theme.textPrimary)
                     : Theme.textDisabled
                 visible: root.iconName.length > 0
             }
@@ -131,7 +133,7 @@ Item {
                 font.family: "Segoe UI Symbol, sans-serif"
                 anchors.verticalCenter: parent.verticalCenter
                 color: root.enabled
-                    ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#60A5FA" : "#2563EB"))
+                    ? (root.isChecked ? Theme.brandPrimary : Theme.textPrimary)
                     : Theme.textDisabled
                 visible: root.iconName.length === 0 && root.iconSymbol.length > 0
             }
@@ -143,7 +145,7 @@ Item {
                 font.weight: root.isChecked ? Font.DemiBold : Font.Normal
                 anchors.verticalCenter: parent.verticalCenter
                 color: root.enabled
-                    ? (root.isChecked ? "#1D4ED8" : (appController.isDarkMode ? "#F1F5F9" : "#1E293B"))
+                    ? (root.isChecked ? Theme.brandPrimary : Theme.textPrimary)
                     : Theme.textDisabled
                 visible: root.text.length > 0
             }
@@ -152,7 +154,9 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 size: 8
                 name: "chevron-down"
-                color: root.enabled ? (appController.isDarkMode ? "#94A3B8" : "#64748B") : Theme.textDisabled
+                color: root.enabled
+                    ? (root.isChecked ? Theme.brandPrimary : Theme.textSecondary)
+                    : Theme.textDisabled
                 visible: root.hasDropdown
             }
         }

@@ -8,7 +8,10 @@ Item {
     property string iconName: ""
     property string iconSymbol: ""
     property int iconSize: 14
-    property color iconColor: root.enabled ? (appController.isDarkMode ? "#60A5FA" : "#2563EB") : Theme.textDisabled
+    property bool isChecked: false
+    property color iconColor: root.enabled
+        ? (root.isChecked ? Theme.brandPrimary : Theme.textPrimary)
+        : Theme.textDisabled
     property string tooltipText: ""
     property string shortcutText: ""
 
@@ -23,9 +26,12 @@ Item {
         color: {
             if (!root.enabled) return "transparent"
             if (mouseArea.pressed) return Theme.buttonPressed
+            if (root.isChecked) return Theme.selectedBackground
             if (mouseArea.containsMouse) return Theme.buttonHover
             return "transparent"
         }
+        border.color: root.isChecked ? Theme.borderFocused : "transparent"
+        border.width: root.isChecked ? 1 : 0
 
         OqIcon {
             anchors.centerIn: parent

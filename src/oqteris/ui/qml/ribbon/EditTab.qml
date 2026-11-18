@@ -7,7 +7,37 @@ Row {
     spacing: 0
     height: 88
 
-    // Group 1: Content Tools
+    // Group 1: History
+    OqRibbonGroup {
+        title: "History"
+
+        Column {
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 3
+
+            OqRibbonButton {
+                text: "Undo"
+                iconName: "undo"
+                isLarge: false
+                tooltipText: "Undo Recent Action"
+                shortcutText: "Ctrl+Z"
+                enabled: ribbonController.canUndo
+                onClicked: ribbonController.undo()
+            }
+
+            OqRibbonButton {
+                text: "Redo"
+                iconName: "redo"
+                isLarge: false
+                tooltipText: "Redo Action"
+                shortcutText: "Ctrl+Y"
+                enabled: ribbonController.canRedo
+                onClicked: ribbonController.redo()
+            }
+        }
+    }
+
+    // Group 2: Insert Tools
     OqRibbonGroup {
         title: "Insert"
 
