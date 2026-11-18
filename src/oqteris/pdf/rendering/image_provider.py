@@ -1,23 +1,31 @@
-"""Qt Quick QQuickImageProvider implementation serving rendered PDF pages to QML.
+"""Qt Quick QQuickAsyncImageProvider implementation serving rendered PDF pages to QML.
 
-Two separate caches are used to prevent thumbnail renders from evicting full-resolution
-pages and vice-versa:
+Threading model
+---------------
+Qt's scene graph calls ``requestImageResponse()`` on a **Qt thread-pool thread**, NOT
+on the main/UI thread.  This means MuPDF decoding, pixmap allocation, and store_shrink
+all happen off the UI thread — the main thread stays free to handle scroll events,
+delivering silky-smooth scrolling even on large scanned PDFs.
 
-  _full_cache  : up to 8 full-resolution pages  / 64 MB  (what the user is reading)
-  _thumb_cache : up to 20 thumbnail pages        / 24 MB  (side-panel strip)
+``QQuickImageResponse`` is returned immediately while rendering happens in the background.
+Qt connects the ``finished`` signal to know when the image is ready, then uploads the
+texture to the GPU without any UI stutter.
 
-The tight limits ensure RAM stays stable even when scrolling through a 500-page PDF.
+Two separate caches prevent thumbnails from evicting full-resolution pages:
+  _full_cache  : up to 12 full-resolution pages  / 80 MB  (what the user is reading)
+  _thumb_cache : up to 20 thumbnail pages         / 24 MB  (side-panel strip)
 """
 
 from __future__ import annotations
 
 import logging
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSize, QThread
 from PySide6.QtGui import QImage
-from PySide6.QtQuick import QQuickImageProvider
+from PySide6.QtQuick import QQuickAsyncImageProvider, QQuickImageResponse
 
 from oqteris.pdf.document.manager import get_document_manager
 from oqteris.pdf.rendering.cache import PageRenderCache
@@ -26,8 +34,45 @@ from oqteris.pdf.rendering.rasterizer import PDFRasterizer
 logger = logging.getLogger(__name__)
 
 
-class PDFPageImageProvider(QQuickImageProvider):
-    """Provides rasterized PDF pages directly to QML Image elements.
+# ---------------------------------------------------------------------------
+# Async image response
+# ---------------------------------------------------------------------------
+
+class _PDFImageResponse(QQuickImageResponse):
+    """Wraps a single async page-render job and signals Qt when complete."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._image: Optional[QImage] = None
+        self._error: str = ""
+
+    # Called from the thread-pool worker thread
+    def _deliver(self, image: Optional[QImage], error: str = "") -> None:
+        self._image = image
+        self._error = error
+        # finished() must be emitted from any thread – Qt marshals it correctly.
+        self.finished.emit()
+
+    # Qt scene-graph calls this on the render thread to get the image
+    def textureFactory(self):  # type: ignore[override]
+        from PySide6.QtQuick import QQuickTextureFactory
+        if self._image and not self._image.isNull():
+            return QQuickTextureFactory.textureFactoryForImage(self._image)
+        # Blank white placeholder
+        placeholder = QImage(1, 1, QImage.Format.Format_RGB888)
+        placeholder.fill(0xFFFFFF)
+        return QQuickTextureFactory.textureFactoryForImage(placeholder)
+
+    def errorString(self) -> str:
+        return self._error
+
+
+# ---------------------------------------------------------------------------
+# Async image provider
+# ---------------------------------------------------------------------------
+
+class PDFPageImageProvider(QQuickAsyncImageProvider):
+    """Provides rasterized PDF pages to QML on a background thread pool.
 
     URI format:
     image://pdf/<doc_id>/<page_index>?zoom=1.5&rot=0&v=123
@@ -35,17 +80,20 @@ class PDFPageImageProvider(QQuickImageProvider):
     """
 
     def __init__(self, rasterizer: Optional[PDFRasterizer] = None) -> None:
-        super().__init__(QQuickImageProvider.ImageType.Image)
+        super().__init__()
 
-        # Full-resolution cache: keep only 8 recently viewed pages (≤64 MB)
-        self._full_cache = PageRenderCache(max_items=8, max_memory_mb=64)
+        # Full-resolution cache: keep 12 recently viewed pages (≤80 MB)
+        self._full_cache = PageRenderCache(max_items=12, max_memory_mb=80)
         # Thumbnail cache: keep up to 20 small thumbnails (≤24 MB)
         self._thumb_cache = PageRenderCache(max_items=20, max_memory_mb=24)
 
-        # Rasterizer uses the full-res cache by default; thumb renders pass their own
         self._rasterizer = rasterizer or PDFRasterizer(cache=self._full_cache)
         self._thumb_rasterizer = PDFRasterizer(cache=self._thumb_cache)
         self._doc_manager = get_document_manager()
+
+        # Thread pool: 2 workers is enough — MuPDF is single-threaded per-document
+        # anyway, and more threads just cause lock contention on the document lock.
+        self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="pdf-render")
 
     # ------------------------------------------------------------------
     # Back-compat: callers that reference .cache get the full-res cache
@@ -72,13 +120,22 @@ class PDFPageImageProvider(QQuickImageProvider):
         self._thumb_cache.invalidate_document(doc_id)
 
     # ------------------------------------------------------------------
-    # Qt Quick image request entry-point
+    # QQuickAsyncImageProvider entry-point (called on Qt thread-pool thread)
     # ------------------------------------------------------------------
 
-    def requestImage(self, id_str: str, size: QSize, requestedSize: QSize) -> QImage:
-        """Invoked by Qt Quick whenever an image://pdf/... URL is requested."""
+    def requestImageResponse(self, id_str: str, requestedSize: QSize) -> _PDFImageResponse:
+        """Return an image response immediately; actual render happens on a pool thread."""
+        response = _PDFImageResponse()
+        # Submit render job to our own pool so we control concurrency
+        self._pool.submit(self._render, response, id_str)
+        return response
+
+    # ------------------------------------------------------------------
+    # Internal render (runs on thread-pool worker, NOT the UI thread)
+    # ------------------------------------------------------------------
+
+    def _render(self, response: _PDFImageResponse, id_str: str) -> None:
         try:
-            # Parse query parameters if present
             if "?" in id_str:
                 path_part, query_part = id_str.split("?", 1)
                 query_params = urllib.parse.parse_qs(query_part)
@@ -89,21 +146,21 @@ class PDFPageImageProvider(QQuickImageProvider):
             segments = path_part.strip("/").split("/")
             if len(segments) < 2:
                 logger.warning("Invalid image://pdf URI: %s", id_str)
-                return self._create_placeholder(200, 200)
+                response._deliver(None, "Invalid URI")
+                return
 
             doc_id = segments[0]
             page_index = int(segments[1])
-
             zoom = float(query_params.get("zoom", ["1.0"])[0])
             rotation = int(query_params.get("rot", ["0"])[0])
             is_thumb = "thumb" in query_params
 
             doc = self._doc_manager.get_document(doc_id)
             if not doc or not doc.is_open:
-                return self._create_placeholder(200, 200)
+                response._deliver(None, "Document not open")
+                return
 
             if is_thumb:
-                # Thumbnails use a fixed low-resolution scale (dpi_scale=1.0 to keep them tiny)
                 thumb_zoom = float(query_params.get("zoom", ["0.2"])[0])
                 img = self._thumb_rasterizer.render_page_to_qimage(
                     doc, page_index, zoom=thumb_zoom, rotation=rotation, dpi_scale=1.0
@@ -113,16 +170,16 @@ class PDFPageImageProvider(QQuickImageProvider):
                     doc, page_index, zoom=zoom, rotation=rotation
                 )
 
-            if img is not None and not img.isNull():
-                return img
+            response._deliver(img)
 
-            return self._create_placeholder(300, 400)
         except Exception as e:
-            logger.error("Exception in requestImage for %s: %s", id_str, e)
-            return self._create_placeholder(200, 200)
+            logger.error("Exception rendering %s: %s", id_str, e)
+            response._deliver(None, str(e))
 
-    def _create_placeholder(self, width: int, height: int) -> QImage:
-        """Create an empty white placeholder image."""
-        img = QImage(max(1, width), max(1, height), QImage.Format.Format_RGB888)
-        img.fill(0xFFFFFF)
-        return img
+    # ------------------------------------------------------------------
+    # Cleanup
+    # ------------------------------------------------------------------
+
+    def shutdown(self) -> None:
+        """Shut down the render thread pool gracefully."""
+        self._pool.shutdown(wait=False, cancel_futures=True)

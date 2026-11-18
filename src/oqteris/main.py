@@ -146,6 +146,7 @@ def main() -> int:
 
     # Cleanup on exit
     coordinator.close()
+    image_provider.shutdown()
     storage.clean_temp_directory()
     db.close()
     return exit_code

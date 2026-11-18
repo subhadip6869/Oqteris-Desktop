@@ -23,9 +23,15 @@ ListView {
     }
 
     // -----------------------------------------------------------------------
-    // Memory & rendering optimisation: buffer 1200px (1-2 pages)
+    // Memory & rendering optimisation: buffer 1500px (≈1 page ahead/behind)
     // -----------------------------------------------------------------------
-    cacheBuffer: 1200
+    // With the async image provider, rendering runs on a background thread so
+    // the UI thread is never blocked by MuPDF decode.  A cacheBuffer of 1500px
+    // pre-instantiates the next page's delegate before it enters the viewport,
+    // giving the background render time to finish before the page is visible —
+    // which eliminates the "blank flash" on scroll while still keeping only
+    // 3–4 delegates alive at any time (memory stays bounded by the render cache).
+    cacheBuffer: 1500
     reuseItems: true
 
     model: pdfController.pageCount
@@ -159,6 +165,24 @@ ListView {
                      "?zoom=" + pdfController.zoomLevel +
                      "&rot=" + pdfController.rotation +
                      "&v=" + pdfController.renderNonce) : ""
+
+                // Loading placeholder: keeps correct page dimensions while
+                // the async background render completes — no blank flash or
+                // layout jitter.
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#F5F5F5"
+                    visible: pageImage.status === Image.Loading
+                    opacity: 0.85
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: (index + 1).toString()
+                        color: "#CCCCCC"
+                        font.pixelSize: Math.min(parent.width, parent.height) * 0.08
+                        font.bold: true
+                    }
+                }
             }
 
             // ---------------------------------------------------------------
