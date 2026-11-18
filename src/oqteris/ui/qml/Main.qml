@@ -382,6 +382,18 @@ ApplicationWindow {
     }
 
     Shortcut {
+        sequences: [ StandardKey.Copy ]
+        enabled: pdfController.hasDocument && (pdfController.selectedText.length > 0 || pdfController.hasSelectedObject)
+        onActivated: pdfController.copyText()
+    }
+
+    Shortcut {
+        sequences: [ StandardKey.SelectAll ]
+        enabled: pdfController.hasDocument
+        onActivated: pdfController.selectAll()
+    }
+
+    Shortcut {
         sequences: [ StandardKey.ZoomIn ]
         onActivated: pdfController.zoomIn()
     }

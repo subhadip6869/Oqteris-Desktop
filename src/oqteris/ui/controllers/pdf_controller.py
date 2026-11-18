@@ -38,6 +38,10 @@ class PDFController(QObject):
     tabsChanged = Signal()
     tocChanged = Signal()
     searchChanged = Signal()
+    selectionRectsChanged = Signal()
+    selectedTextChanged = Signal(str)
+    selectedObjectChanged = Signal()
+    selectAllTriggered = Signal()
     renderInvalidated = Signal(int)  # page_index (-1 for all pages)
     errorOccurred = Signal(str, str)  # title, message
     passwordPromptRequested = Signal(str)  # file_path
@@ -64,7 +68,46 @@ class PDFController(QObject):
         self._search_results: list[SearchMatch] = []
         self._search_result_index = -1
 
+        # Text & Object selection state
+        self._selected_text = ""
+        self._selection_page_index = -1
+        self._selection_rects: list[dict[str, Any]] = []
+        self._selected_object: dict[str, Any] = {}
+        self._words_cache: dict[int, list[Any]] = {}
+        self._objects_cache: dict[int, list[dict[str, Any]]] = {}
+
+    def _reset_selection(self) -> None:
+        self._selected_text = ""
+        self._selection_page_index = -1
+        self._selection_rects = []
+        self._selected_object = {}
+        self._words_cache.clear()
+        self._objects_cache.clear()
+        self.selectionRectsChanged.emit()
+        self.selectedTextChanged.emit("")
+        self.selectedObjectChanged.emit()
+
     # --- Document Properties ---
+
+    @Property(int, notify=selectionRectsChanged)
+    def selectionPageIndex(self) -> int:
+        return self._selection_page_index
+
+    @Property("QVariantList", notify=selectionRectsChanged)
+    def selectionRects(self) -> list[dict[str, Any]]:
+        return self._selection_rects
+
+    @Property(str, notify=selectedTextChanged)
+    def selectedText(self) -> str:
+        return self._selected_text
+
+    @Property("QVariantMap", notify=selectedObjectChanged)
+    def selectedObject(self) -> dict[str, Any]:
+        return self._selected_object
+
+    @Property(bool, notify=selectedObjectChanged)
+    def hasSelectedObject(self) -> bool:
+        return bool(self._selected_object)
 
     @Property(bool, notify=documentChanged)
     def hasDocument(self) -> bool:
@@ -198,6 +241,7 @@ class PDFController(QObject):
         try:
             doc, meta = self._doc_manager.open_document(path, password=password)
             self._current_page = 0
+            self._reset_selection()
             self.documentChanged.emit()
             self.pageChanged.emit(0)
             self.tabsChanged.emit()
@@ -236,6 +280,7 @@ class PDFController(QObject):
         self._doc_manager.close_document(target_id)
         if was_active:
             self._current_page = 0
+            self._reset_selection()
             self.pageChanged.emit(0)
 
         self.documentChanged.emit()
@@ -247,6 +292,7 @@ class PDFController(QObject):
         if doc_id != self.activeDocId and self._doc_manager.get_document(doc_id):
             self._doc_manager.active_doc_id = doc_id
             self._current_page = 0
+            self._reset_selection()
             self.documentChanged.emit()
             self.pageChanged.emit(0)
             self.tabsChanged.emit()
@@ -440,8 +486,267 @@ class PDFController(QObject):
             return doc.extract_text_page(page_index)
         return ""
 
+    @Slot(int, float, float, float, float)
+    def updateSelection(self, page_index: int, start_x: float, start_y: float, cur_x: float, cur_y: float) -> None:
+        doc = self._doc_manager.active_document
+        if not doc or not doc.is_open or doc.raw_doc is None:
+            self.clearSelection()
+            return
+        if not (0 <= page_index < len(doc.raw_doc)):
+            self.clearSelection()
+            return
+
+        page = doc.raw_doc[page_index]
+        if page_index not in self._words_cache:
+            self._words_cache[page_index] = page.get_text("words")
+
+        words = self._words_cache[page_index]
+        if not words:
+            self.clearSelection()
+            return
+
+        # Find word nearest to (start_x, start_y) and (cur_x, cur_y)
+        def find_word_index(x: float, y: float) -> int:
+            for i, w in enumerate(words):
+                if w[0] <= x <= w[2] and w[1] <= y <= w[3]:
+                    return i
+            same_line = []
+            for i, w in enumerate(words):
+                if (w[1] - 4) <= y <= (w[3] + 4):
+                    same_line.append((i, w))
+            if same_line:
+                return min(same_line, key=lambda it: min(abs(it[1][0] - x), abs(it[1][2] - x)))[0]
+            return min(enumerate(words), key=lambda it: (it[1][0] + it[1][2] - 2 * x) ** 2 + (it[1][1] + it[1][3] - 2 * y) ** 2 * 9)[0]
+
+        i1 = find_word_index(start_x, start_y)
+        i2 = find_word_index(cur_x, cur_y)
+        if i1 < 0 or i2 < 0:
+            self.clearSelection()
+            return
+
+        start_idx = min(i1, i2)
+        end_idx = max(i1, i2)
+        sel_words = words[start_idx : end_idx + 1]
+
+        # Group by (block, line) preserving reading order
+        lines: list[list[Any]] = []
+        curr_key = None
+        curr_line: list[Any] = []
+        for w in sel_words:
+            key = (w[5], w[6])
+            if key != curr_key:
+                if curr_line:
+                    lines.append(curr_line)
+                curr_key = key
+                curr_line = [w]
+            else:
+                curr_line.append(w)
+        if curr_line:
+            lines.append(curr_line)
+
+        line_rects = []
+        line_texts = []
+        for l_words in lines:
+            rx0 = min(w[0] for w in l_words)
+            ry0 = min(w[1] for w in l_words)
+            rx1 = max(w[2] for w in l_words)
+            ry1 = max(w[3] for w in l_words)
+            line_rects.append({"x0": rx0, "y0": ry0, "x1": rx1, "y1": ry1})
+            line_texts.append(" ".join(w[4] for w in l_words))
+
+        # Clear any object selection when selecting text
+        if self._selected_object:
+            self._selected_object = {}
+            self.selectedObjectChanged.emit()
+
+        self._selection_page_index = page_index
+        self._selection_rects = line_rects
+        self._selected_text = "\n".join(line_texts)
+        self.selectionRectsChanged.emit()
+        self.selectedTextChanged.emit(self._selected_text)
+
+    @Slot(int, float, float, float, float, result=str)
+    def extractTextInRect(self, page_index: int, x0: float, y0: float, x1: float, y1: float) -> str:
+        self.updateSelection(page_index, x0, y0, x1, y1)
+        return self._selected_text
+
+    @Slot(int, result="QVariantList")
+    def getPageObjects(self, page_index: int) -> list[dict[str, Any]]:
+        """Return non-text objects (images and vector shapes) on the specified page."""
+        doc = self._doc_manager.active_document
+        if not doc or not doc.is_open or doc.raw_doc is None:
+            return []
+        if not (0 <= page_index < len(doc.raw_doc)):
+            return []
+
+        if page_index in self._objects_cache:
+            return self._objects_cache[page_index]
+
+        page = doc.raw_doc[page_index]
+        page_rect = page.rect
+        objects: list[dict[str, Any]] = []
+
+        # 1. Embedded raster images
+        try:
+            for img_info in page.get_images():
+                xref = img_info[0]
+                for r in page.get_image_rects(xref):
+                    if r.width >= 5 and r.height >= 5:
+                        objects.append({
+                            "type": "image",
+                            "xref": xref,
+                            "x0": float(r.x0),
+                            "y0": float(r.y0),
+                            "x1": float(r.x1),
+                            "y1": float(r.y1),
+                        })
+        except Exception as e:
+            logger.debug("Failed getting images for page %s: %s", page_index, e)
+
+        # 2. Vector drawings / shapes
+        try:
+            for d in page.get_drawings():
+                r = d.get("rect")
+                if r:
+                    if r.width >= page_rect.width - 2 and r.height >= page_rect.height - 2:
+                        continue
+                    if r.width < 6 or r.height < 6:
+                        continue
+                    objects.append({
+                        "type": "shape",
+                        "xref": 0,
+                        "x0": float(r.x0),
+                        "y0": float(r.y0),
+                        "x1": float(r.x1),
+                        "y1": float(r.y1),
+                    })
+        except Exception as e:
+            logger.debug("Failed getting drawings for page %s: %s", page_index, e)
+
+        self._objects_cache[page_index] = objects
+        return objects
+
+    @Slot(int, "QVariantMap")
+    def selectObject(self, page_index: int, obj_data: dict[str, Any]) -> None:
+        """Select a non-text object (image or shape)."""
+        # Clear any text selection
+        if self._selected_text or self._selection_rects:
+            self._selected_text = ""
+            self._selection_page_index = -1
+            self._selection_rects = []
+            self.selectionRectsChanged.emit()
+            self.selectedTextChanged.emit("")
+
+        sel = dict(obj_data)
+        sel["pageIndex"] = page_index
+        self._selected_object = sel
+        self.selectedObjectChanged.emit()
+
+    @Slot()
+    def selectAll(self) -> None:
+        doc = self._doc_manager.active_document
+        if not doc or not doc.is_open or doc.raw_doc is None:
+            return
+        page_index = self._current_page
+        if not (0 <= page_index < len(doc.raw_doc)):
+            return
+
+        page = doc.raw_doc[page_index]
+        words = page.get_text("words")
+        if not words:
+            return
+
+        lines: list[list[Any]] = []
+        curr_key = None
+        curr_line: list[Any] = []
+        for w in words:
+            key = (w[5], w[6])
+            if key != curr_key:
+                if curr_line:
+                    lines.append(curr_line)
+                curr_key = key
+                curr_line = [w]
+            else:
+                curr_line.append(w)
+        if curr_line:
+            lines.append(curr_line)
+
+        line_rects = []
+        line_texts = []
+        for l_words in lines:
+            rx0 = min(w[0] for w in l_words)
+            ry0 = min(w[1] for w in l_words)
+            rx1 = max(w[2] for w in l_words)
+            ry1 = max(w[3] for w in l_words)
+            line_rects.append({"x0": rx0, "y0": ry0, "x1": rx1, "y1": ry1})
+            line_texts.append(" ".join(w[4] for w in l_words))
+
+        if self._selected_object:
+            self._selected_object = {}
+            self.selectedObjectChanged.emit()
+
+        self._selection_page_index = page_index
+        self._selection_rects = line_rects
+        self._selected_text = "\n".join(line_texts)
+        self.selectionRectsChanged.emit()
+        self.selectedTextChanged.emit(self._selected_text)
+        self.selectAllTriggered.emit()
+
+    @Slot()
+    def clearSelection(self) -> None:
+        changed = False
+        if self._selected_text or self._selection_rects:
+            self._selected_text = ""
+            self._selection_page_index = -1
+            self._selection_rects = []
+            self.selectionRectsChanged.emit()
+            self.selectedTextChanged.emit("")
+            changed = True
+        if self._selected_object:
+            self._selected_object = {}
+            self.selectedObjectChanged.emit()
+            changed = True
+
+    @Slot()
     @Slot(str)
-    def copyText(self, text: str) -> None:
-        clipboard = QGuiApplication.clipboard()
-        if clipboard:
-            clipboard.setText(text)
+    def copyText(self, text: str = "") -> None:
+        target_text = text if text else self._selected_text
+        if target_text:
+            clipboard = QGuiApplication.clipboard()
+            if clipboard:
+                clipboard.setText(target_text)
+            return
+
+        # If a non-text object (image or shape) is selected, copy it to clipboard as an image
+        if self._selected_object:
+            doc = self._doc_manager.active_document
+            if not doc or not doc.is_open or doc.raw_doc is None:
+                return
+            page_index = self._selected_object.get("pageIndex", -1)
+            if not (0 <= page_index < len(doc.raw_doc)):
+                return
+            page = doc.raw_doc[page_index]
+            try:
+                import pymupdf
+                from PySide6.QtGui import QImage
+                xref = self._selected_object.get("xref", 0)
+                if xref > 0 and self._selected_object.get("type") == "image":
+                    pix = pymupdf.Pixmap(doc.raw_doc, xref)
+                    if pix.n >= 5:
+                        pix = pymupdf.Pixmap(pymupdf.csRGB, pix)
+                    fmt = QImage.Format_RGB888 if pix.n == 3 else (QImage.Format_RGBA8888 if pix.n == 4 else QImage.Format_Grayscale8)
+                    qimg = QImage(pix.samples, pix.width, pix.height, pix.stride, fmt)
+                else:
+                    x0 = self._selected_object.get("x0", 0)
+                    y0 = self._selected_object.get("y0", 0)
+                    x1 = self._selected_object.get("x1", 0)
+                    y1 = self._selected_object.get("y1", 0)
+                    rect = pymupdf.Rect(x0, y0, x1, y1)
+                    pix = page.get_pixmap(clip=rect, dpi=150)
+                    qimg = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
+
+                clipboard = QGuiApplication.clipboard()
+                if clipboard and not qimg.isNull():
+                    clipboard.setImage(qimg.copy())
+            except Exception as e:
+                logger.warning("Failed copying object to clipboard: %s", e)

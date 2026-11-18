@@ -73,12 +73,10 @@ Row {
                 text: "Copy"
                 iconName: "copy"
                 isLarge: false
-                tooltipText: "Copy Selected Text"
+                tooltipText: "Copy Selected Text or Object"
                 shortcutText: "Ctrl+C"
-                enabled: pdfController.hasDocument
-                onClicked: {
-                    // Copy action
-                }
+                enabled: pdfController.hasDocument && (pdfController.selectedText.length > 0 || pdfController.hasSelectedObject)
+                onClicked: pdfController.copyText()
             }
 
             OqRibbonButton {
@@ -88,9 +86,7 @@ Row {
                 tooltipText: "Select All Page Content"
                 shortcutText: "Ctrl+A"
                 enabled: pdfController.hasDocument
-                onClicked: {
-                    // Select all action
-                }
+                onClicked: pdfController.selectAll()
             }
         }
     }
