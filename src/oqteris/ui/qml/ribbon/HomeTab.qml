@@ -54,10 +54,7 @@ Row {
             tooltipText: "Print Document"
             shortcutText: "Ctrl+P"
             enabled: pdfController.hasDocument
-            onClicked: {
-                // Trigger print dialog or notification
-                signatureController.requestStatusMessage("Print", "Printing dialog prepared for " + pdfController.fileName)
-            }
+            onClicked: pdfController.printDocument()
         }
     }
 

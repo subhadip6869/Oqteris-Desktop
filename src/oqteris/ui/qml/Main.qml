@@ -357,6 +357,12 @@ ApplicationWindow {
     }
 
     Shortcut {
+        sequences: [ StandardKey.Print ]
+        enabled: pdfController.hasDocument
+        onActivated: pdfController.printDocument()
+    }
+
+    Shortcut {
         sequences: [ StandardKey.Close ]
         onActivated: {
             if (pdfController.hasDocument) pdfController.closeDocument()

@@ -7,8 +7,11 @@ import platform
 from pathlib import Path
 from typing import Any, Optional
 
-from PySide6.QtCore import QObject, Property, QUrl, Signal, Slot
-from PySide6.QtGui import QClipboard, QGuiApplication
+import pymupdf
+from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
+from PySide6.QtGui import QClipboard, QGuiApplication, QImage, QPainter
+from PySide6.QtPrintSupport import QAbstractPrintDialog, QPrintDialog, QPrinter
+from PySide6.QtWidgets import QApplication, QDialog
 
 from oqteris.config.settings import get_settings_manager
 from oqteris.core.constants import (
@@ -329,6 +332,105 @@ class PDFController(QObject):
             return True
         except Exception as e:
             self.errorOccurred.emit("Save As Error", str(e))
+            return False
+
+    @Slot()
+    def printDocument(self) -> bool:
+        """Open the native print dialog and print the active PDF."""
+        doc = self._doc_manager.active_document
+        if not doc:
+            return False
+
+        try:
+            metadata = doc.get_metadata()
+            if not metadata.can_print:
+                self.errorOccurred.emit(
+                    "Print Error",
+                    "This document's security settings do not allow printing.",
+                )
+                return False
+
+            printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+            if doc.file_path:
+                printer.setDocName(doc.file_path.name)
+
+            dialog = QPrintDialog(printer, QApplication.activeWindow())
+            dialog.setWindowTitle("Print PDF")
+            dialog.setMinMax(1, doc.page_count)
+            dialog.setOption(
+                QAbstractPrintDialog.PrintDialogOption.PrintPageRange,
+                True,
+            )
+            dialog.setOption(
+                QAbstractPrintDialog.PrintDialogOption.PrintCurrentPage,
+                True,
+            )
+            dialog.setOption(
+                QAbstractPrintDialog.PrintDialogOption.PrintSelection,
+                False,
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return False
+
+            if printer.printRange() == QPrinter.PrintRange.CurrentPage:
+                page_indices = [self._current_page]
+            elif printer.printRange() == QPrinter.PrintRange.PageRange:
+                first_page = max(0, printer.fromPage() - 1)
+                end_page = min(doc.page_count, printer.toPage())
+                if first_page >= end_page:
+                    raise PDFError("The selected print page range is invalid.")
+                page_indices = range(first_page, end_page)
+            elif printer.printRange() == QPrinter.PrintRange.AllPages:
+                page_indices = range(doc.page_count)
+            else:
+                raise PDFError("Printing selected content is not supported.")
+
+            raw_doc = doc.raw_doc
+            if raw_doc is None:
+                raise PDFError("The active PDF is no longer available.")
+
+            painter = QPainter()
+            if not painter.begin(printer):
+                raise PDFError("Could not start the printer.")
+
+            try:
+                for position, page_index in enumerate(page_indices):
+                    if position and not printer.newPage():
+                        raise PDFError("Could not start the next printer page.")
+
+                    page = raw_doc[page_index]
+                    page_rect = page.rect
+                    paint_rect = printer.pageLayout().paintRectPixels(printer.resolution())
+                    scale = min(
+                        paint_rect.width() / page_rect.width,
+                        paint_rect.height() / page_rect.height,
+                    )
+                    pixmap = page.get_pixmap(
+                        matrix=pymupdf.Matrix(scale, scale),
+                        alpha=False,
+                    )
+                    image = QImage(
+                        pixmap.samples,
+                        pixmap.width,
+                        pixmap.height,
+                        pixmap.stride,
+                        QImage.Format.Format_RGB888,
+                    ).copy()
+
+                    x = paint_rect.x() + (paint_rect.width() - image.width()) / 2
+                    y = paint_rect.y() + (paint_rect.height() - image.height()) / 2
+                    painter.drawImage(int(x), int(y), image)
+                    del pixmap
+                    pymupdf.TOOLS.store_shrink(100)
+            finally:
+                if not painter.end():
+                    raise PDFError("Could not finish sending the document to the printer.")
+
+            logger.info("Printed PDF %s", doc.file_path)
+            return True
+        except Exception as e:
+            logger.exception("Failed to print PDF %s", doc.file_path)
+            self.errorOccurred.emit("Print Error", f"Unable to print document: {e}")
             return False
 
     # --- Navigation Slots ---
