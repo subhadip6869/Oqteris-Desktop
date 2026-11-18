@@ -12,8 +12,8 @@ ApplicationWindow {
     id: mainWindow
     visible: true
     width: 1280
-    height: 820
-    minimumWidth: 800
+    height: 720
+    minimumWidth: 980
     minimumHeight: 600
     color: Theme.windowBackground
 
@@ -41,11 +41,13 @@ ApplicationWindow {
     Column {
         anchors.fill: parent
 
-        // 1. Quick-Access Toolbar & Window Header
+        // 1. Quick-Access Toolbar & Window Header (Shown when document is open)
         Rectangle {
             id: quickAccessBar
             width: parent.width
-            height: 34
+            height: pdfController.hasDocument ? 34 : 0
+            visible: pdfController.hasDocument
+            clip: true
             color: Theme.titleBarBackground
             border.color: Theme.borderSubtle
             border.width: 1
@@ -163,22 +165,25 @@ ApplicationWindow {
             }
         }
 
-        // 2. Main Ribbon Bar
+        // 2. Main Ribbon Bar (Shown when document is open)
         RibbonBar {
             id: mainRibbon
             width: parent.width
+            height: pdfController.hasDocument ? 124 : 0
+            visible: pdfController.hasDocument
+            clip: true
         }
 
         // 3. Central Application Workspace Area
         Row {
             width: parent.width
-            height: parent.height - quickAccessBar.height - mainRibbon.height
+            height: parent.height - (pdfController.hasDocument ? (quickAccessBar.height + mainRibbon.height) : 0)
 
             // Left Navigation Drawer
             NavigationPanel {
                 id: leftPanel
                 height: parent.height
-                visible: mainPanelState.showLeftPanel
+                visible: pdfController.hasDocument && mainPanelState.showLeftPanel
             }
 
             // Center Document Workspace
@@ -192,7 +197,7 @@ ApplicationWindow {
             PropertiesPanel {
                 id: rightPanel
                 height: parent.height
-                visible: mainPanelState.showRightPanel
+                visible: pdfController.hasDocument && mainPanelState.showRightPanel
             }
         }
     }
@@ -203,9 +208,15 @@ ApplicationWindow {
     SettingsDialog { id: settingsDlg }
     SignDialog { id: signDlg }
     CertificateDetailsDialog { id: certDetailsDlg }
+    TrustStoreDialog { id: trustStoreDlg }
     OcrDialog { id: ocrDlg }
     OptimizeDialog { id: optimizeDlg }
     PasswordDialog { id: passwordDlg }
+
+    QtObject {
+        id: trustStoreDialogLoader
+        function openTrustStoreDialog() { trustStoreDlg.open() }
+    }
 
     QtObject {
         id: certDetailsDialogLoader
