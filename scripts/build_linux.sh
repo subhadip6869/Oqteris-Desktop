@@ -78,7 +78,7 @@ chmod 0755 "$DEB_DIR/DEBIAN/postrm"
 # Control file
 cat << 'EOF' > "$DEB_DIR/DEBIAN/control"
 Package: oqteris
-Version: 1.2.0
+Version: 1.2.1
 Section: office
 Priority: optional
 Architecture: amd64
@@ -90,7 +90,7 @@ Description: Complete Cross-Platform PDF Reader and Editor
  digital signatures validation, OCR recognition, and document optimization.
 EOF
 
-DEB_OUTPUT="dist/Oqteris-1.2.0-Linux-x64.deb"
+DEB_OUTPUT="dist/Oqteris-1.2.1-Linux-x64.deb"
 dpkg-deb --build "$DEB_DIR" "$DEB_OUTPUT"
 rm -rf "$DEB_DIR"
 
@@ -119,7 +119,7 @@ if [ -z "$RPM_FILE" ] || [ ! -f "$RPM_FILE" ]; then
     exit 1
 fi
 
-RPM_OUTPUT="dist/Oqteris-1.2.0-Linux-x64.rpm"
+RPM_OUTPUT="dist/Oqteris-1.2.1-Linux-x64.rpm"
 cp "$RPM_FILE" "$RPM_OUTPUT"
 rm -rf "$RPM_TOP"
 

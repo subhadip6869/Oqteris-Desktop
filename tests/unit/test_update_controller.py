@@ -57,7 +57,7 @@ def test_format_bytes_speed():
 def test_update_controller_initial_state(qapp):
     controller = UpdateController()
     assert controller.status == "idle"
-    assert controller.currentVersion == "1.2.0"
+    assert controller.currentVersion == "1.2.1"
     assert controller.latestVersion == ""
     assert controller.downloadProgress == 0.0
 
@@ -97,11 +97,11 @@ def test_update_controller_check_available(qapp):
 def test_update_controller_check_up_to_date(qapp):
     controller = UpdateController()
     fake_release = {
-        "tag_name": "v1.2.0",
-        "name": "Oqteris v1.2.0",
+        "tag_name": "v1.2.1",
+        "name": "Oqteris v1.2.1",
         "body": "Current version",
         "published_at": "2026-11-18T00:00:00Z",
-        "html_url": "https://github.com/subhadip6869/Oqteris-Desktop/releases/tag/v1.2.0",
+        "html_url": "https://github.com/subhadip6869/Oqteris-Desktop/releases/tag/v1.2.1",
         "assets": [],
     }
 

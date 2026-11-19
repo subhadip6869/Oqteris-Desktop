@@ -1,6 +1,6 @@
 # Maintainer: Subhadip Dutta <subhadip6869@users.noreply.github.com>
 pkgname=oqteris
-pkgver=1.2.0
+pkgver=1.2.1
 pkgrel=1
 pkgdesc="Complete Cross-Platform PDF Reader and Editor"
 arch=('x86_64')

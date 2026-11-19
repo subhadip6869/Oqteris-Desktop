@@ -1,5 +1,5 @@
 Name:           oqteris
-Version:        1.2.0
+Version:        1.2.1
 Release:        1
 Summary:        Complete Cross-Platform PDF Reader and Editor
 License:        Apache-2.0

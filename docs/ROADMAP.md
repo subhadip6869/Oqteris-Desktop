@@ -1,6 +1,6 @@
 # Oqteris Project Roadmap
 
-## Version 1.2.0 (Current Release)
+## Version 1.2.1 (Current Release)
 - [x] Modern ribbon desktop interface in Qt Quick / QML.
 - [x] Dedicated HomeScreen landing view when no documents are loaded.
 - [x] PyMuPDF rendering engine with bounded LRU memory tile caching and native leak prevention.
