@@ -81,6 +81,7 @@ class PDFRasterizer:
         rotation: int = 0,
         use_cache: bool = True,
         dpi_scale: Optional[float] = None,
+        grayscale: bool = False,
     ) -> Optional[QImage]:
         """Rasterize a page to a high-DPI QImage, using the cache if enabled."""
         if not document.is_open or not (0 <= page_index < document.page_count):
@@ -88,7 +89,7 @@ class PDFRasterizer:
 
         # Return cached image immediately — no MuPDF work needed.
         if use_cache:
-            cached_img = self.cache.get(document.doc_id, page_index, zoom, rotation)
+            cached_img = self.cache.get(document.doc_id, page_index, zoom, rotation, grayscale=grayscale)
             if cached_img is not None:
                 return cached_img
 
@@ -114,21 +115,20 @@ class PDFRasterizer:
             matrix = pymupdf.Matrix(effective_zoom, effective_zoom).prerotate(total_rotation)
 
             # High quality pixmap with anti-aliasing
-            pix = page.get_pixmap(matrix=matrix, alpha=False)
+            cs = pymupdf.csGRAY if grayscale else pymupdf.csRGB
+            pix = page.get_pixmap(matrix=matrix, alpha=False, colorspace=cs)
 
-            # Deep-copy pixel bytes into QImage so it fully owns the buffer, then
-            # immediately release both the pixmap and the page reference so MuPDF
-            # can drop any page-local resources as soon as possible.
+            fmt = QImage.Format.Format_Grayscale8 if grayscale else QImage.Format.Format_RGB888
             qimage = QImage(
                 pix.samples,
                 pix.width,
                 pix.height,
                 pix.stride,
-                QImage.Format.Format_RGB888,
+                fmt,
             ).copy()
 
             # --- Critical: free native MuPDF memory before returning ---
-            # 1. Release the C pixmap buffer (RGB pixel data).
+            # 1. Release the C pixmap buffer (pixel data).
             del pix
             pix = None
             # 2. Release the page reference so MuPDF can free page-local structures.
@@ -143,7 +143,7 @@ class PDFRasterizer:
             qimage.setDevicePixelRatio(scale)
 
             if use_cache:
-                self.cache.put(document.doc_id, page_index, zoom, rotation, qimage)
+                self.cache.put(document.doc_id, page_index, zoom, rotation, qimage, grayscale=grayscale)
 
             return qimage
 

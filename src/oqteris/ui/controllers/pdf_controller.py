@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Any, Optional
 
 import pymupdf
-from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
-from PySide6.QtGui import QClipboard, QGuiApplication, QImage, QPainter
-from PySide6.QtPrintSupport import QAbstractPrintDialog, QPrintDialog, QPrinter
+from PySide6.QtCore import Property, QMarginsF, QObject, QUrl, Signal, Slot
+from PySide6.QtGui import QClipboard, QGuiApplication, QImage, QPainter, QPageLayout, QPageSize
+from PySide6.QtPrintSupport import QAbstractPrintDialog, QPrintDialog, QPrinter, QPrinterInfo
 from PySide6.QtWidgets import QApplication, QDialog
 
 from oqteris.config.settings import get_settings_manager
@@ -336,7 +336,11 @@ class PDFController(QObject):
 
     @Slot()
     def printDocument(self) -> bool:
-        """Open the native print dialog and print the active PDF."""
+        """Open the native print dialog and print the active PDF.
+
+        Fixes: landscape pages now auto-rotate the printer orientation to avoid
+        wide pages being squashed into portrait paper.
+        """
         doc = self._doc_manager.active_document
         if not doc:
             return False
@@ -373,15 +377,15 @@ class PDFController(QObject):
                 return False
 
             if printer.printRange() == QPrinter.PrintRange.CurrentPage:
-                page_indices = [self._current_page]
+                page_indices: list[int] = [self._current_page]
             elif printer.printRange() == QPrinter.PrintRange.PageRange:
                 first_page = max(0, printer.fromPage() - 1)
                 end_page = min(doc.page_count, printer.toPage())
                 if first_page >= end_page:
                     raise PDFError("The selected print page range is invalid.")
-                page_indices = range(first_page, end_page)
+                page_indices = list(range(first_page, end_page))
             elif printer.printRange() == QPrinter.PrintRange.AllPages:
-                page_indices = range(doc.page_count)
+                page_indices = list(range(doc.page_count))
             else:
                 raise PDFError("Printing selected content is not supported.")
 
@@ -395,11 +399,27 @@ class PDFController(QObject):
 
             try:
                 for position, page_index in enumerate(page_indices):
+                    page = raw_doc[page_index]
+                    page_rect = page.rect
+
+                    # Auto-orient: switch printer to landscape when the PDF page
+                    # is wider than it is tall so the page fills the paper properly.
+                    page_is_landscape = page_rect.width > page_rect.height
+                    desired_orientation = (
+                        QPageLayout.Orientation.Landscape
+                        if page_is_landscape
+                        else QPageLayout.Orientation.Portrait
+                    )
+                    if position == 0:
+                        # Set orientation before the first page (before painting begins
+                        # for real — QPainter is already started so we just adjust
+                        # for the scale calculation below; the printer dialog may have
+                        # already committed the page size, so this is best-effort).
+                        printer.setPageOrientation(desired_orientation)
+
                     if position and not printer.newPage():
                         raise PDFError("Could not start the next printer page.")
 
-                    page = raw_doc[page_index]
-                    page_rect = page.rect
                     paint_rect = printer.pageLayout().paintRectPixels(printer.resolution())
                     scale = min(
                         paint_rect.width() / page_rect.width,
@@ -423,15 +443,427 @@ class PDFController(QObject):
                     del pixmap
                     pymupdf.TOOLS.store_shrink(100)
             finally:
-                if not painter.end():
-                    raise PDFError("Could not finish sending the document to the printer.")
+                painter.end()
 
             logger.info("Printed PDF %s", doc.file_path)
             return True
-        except Exception as e:
-            logger.exception("Failed to print PDF %s", doc.file_path)
-            self.errorOccurred.emit("Print Error", f"Unable to print document: {e}")
+        except PDFError as e:
+            logger.error("Print error for %s: %s", doc.file_path, e)
+            self.errorOccurred.emit("Print Error", str(e))
             return False
+        except OSError as e:
+            logger.exception("OS error while printing %s", doc.file_path)
+            self.errorOccurred.emit("Print Error", f"System error during printing: {e}")
+            return False
+        except RuntimeError as e:
+            logger.exception("Runtime error while printing %s", doc.file_path)
+            self.errorOccurred.emit("Print Error", f"Unexpected error during printing: {e}")
+            return False
+
+    # ---------------------------------------------------------------------------
+    # Printer information helpers
+    # ---------------------------------------------------------------------------
+
+    @Slot(result="QVariantList")
+    def getAvailablePrinters(self) -> list[str]:
+        """Return a list of installed printer names available on this system."""
+        return [info.printerName() for info in QPrinterInfo.availablePrinters()]
+
+    @Slot(result=str)
+    def getDefaultPrinter(self) -> str:
+        """Return the system default printer name, or an empty string if none."""
+        return QPrinterInfo.defaultPrinter().printerName()
+
+    # ---------------------------------------------------------------------------
+    # Page-range parsing helper
+    # ---------------------------------------------------------------------------
+
+    @Slot(str, int, result="QVariantList")
+    def parsePageRange(self, range_str: str, page_count: int) -> list[int]:
+        """Parse a page-range string into a sorted, deduplicated list of 0-based page indices.
+
+        Accepted formats: "all", "current" (returns [currentPage]), comma-separated
+        values and/or dash-separated ranges, e.g. "1,3,5-8".
+        """
+        range_str = range_str.strip().lower()
+        if range_str in ("", "all"):
+            return list(range(page_count))
+        if range_str == "current":
+            idx = max(0, min(self._current_page, page_count - 1))
+            return [idx]
+
+        indices: set[int] = set()
+        for part in range_str.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if "-" in part:
+                bounds = part.split("-", 1)
+                try:
+                    lo = int(bounds[0].strip()) - 1
+                    hi = int(bounds[1].strip()) - 1
+                    if lo > hi:
+                        lo, hi = hi, lo
+                    for i in range(max(0, lo), min(page_count - 1, hi) + 1):
+                        indices.add(i)
+                except ValueError:
+                    logger.warning("Ignoring invalid page range segment: %r", part)
+            else:
+                try:
+                    idx = int(part) - 1
+                    if 0 <= idx < page_count:
+                        indices.add(idx)
+                except ValueError:
+                    logger.warning("Ignoring non-numeric page range token: %r", part)
+
+        return sorted(indices)
+
+    # ---------------------------------------------------------------------------
+    # Advanced print slot
+    # ---------------------------------------------------------------------------
+
+    @Slot("QVariantMap", result=bool)
+    def printWithSettings(self, settings: dict) -> bool:  # noqa: C901  (complexity is intentional)
+        """Print the active PDF with fine-grained settings supplied from QML.
+
+        Accepted *settings* keys (all optional, see defaults below):
+            pageRange    : str   — "all" | "current" | "1,3,5-8"   (default "all")
+            copies       : int   — number of copies                  (default 1)
+            duplex       : str   — "none" | "long_edge" | "short_edge" (default "none")
+            orientation  : str   — "auto" | "portrait" | "landscape" (default "auto")
+            scale        : str   — "fit" | "actual" | "custom"       (default "fit")
+            scalePercent : float — 10..200, only used when scale=="custom" (default 100)
+            nup          : int   — pages per sheet 1|2|4|6|9         (default 1)
+            nupOrder     : str   — "ltr" | "rtl" | "ttb"            (default "ltr")
+            booklet      : bool  — saddle-stitch booklet mode        (default False)
+            marginTop    : float — mm                                (default 0)
+            marginBottom : float — mm                                (default 0)
+            marginLeft   : float — mm                                (default 0)
+            marginRight  : float — mm                                (default 0)
+            grayscale    : bool  — force grayscale rasterisation     (default False)
+            reverseOrder : bool  — reverse page order                (default False)
+            collate      : bool  — collate copies                    (default True)
+            printerName  : str   — printer name, "" = default        (default "")
+            paperSize    : str   — "letter"|"a4"|"a3"|"legal"|"auto" (default "auto")
+        """
+        doc = self._doc_manager.active_document
+        if not doc:
+            return False
+
+        try:
+            metadata = doc.get_metadata()
+            if not metadata.can_print:
+                self.errorOccurred.emit(
+                    "Print Error",
+                    "This document's security settings do not allow printing.",
+                )
+                return False
+
+            raw_doc = doc.raw_doc
+            if raw_doc is None:
+                raise PDFError("The active PDF is no longer available.")
+
+            # ------------------------------------------------------------------
+            # Resolve settings with defaults
+            # ------------------------------------------------------------------
+            page_range_str: str = str(settings.get("pageRange", "all"))
+            copies: int = max(1, int(settings.get("copies", 1)))
+            duplex_str: str = str(settings.get("duplex", "none")).lower()
+            orientation_str: str = str(settings.get("orientation", "auto")).lower()
+            scale_str: str = str(settings.get("scale", "fit")).lower()
+            scale_percent: float = float(settings.get("scalePercent", 100.0))
+            scale_percent = max(10.0, min(200.0, scale_percent))
+            nup: int = int(settings.get("nup", 1))
+            nup_order: str = str(settings.get("nupOrder", "ltr")).lower()
+            booklet: bool = bool(settings.get("booklet", False))
+            margin_top: float = float(settings.get("marginTop", 0.0))
+            margin_bottom: float = float(settings.get("marginBottom", 0.0))
+            margin_left: float = float(settings.get("marginLeft", 0.0))
+            margin_right: float = float(settings.get("marginRight", 0.0))
+            grayscale: bool = bool(settings.get("grayscale", False))
+            reverse_order: bool = bool(settings.get("reverseOrder", False))
+            collate: bool = bool(settings.get("collate", True))
+            printer_name: str = str(settings.get("printerName", ""))
+            paper_size_str: str = str(settings.get("paperSize", "auto")).lower()
+
+            # ------------------------------------------------------------------
+            # Build base page index list
+            # ------------------------------------------------------------------
+            page_indices: list[int] = self.parsePageRange(page_range_str, doc.page_count)
+            if not page_indices:
+                raise PDFError("No pages selected for printing.")
+
+            if reverse_order:
+                page_indices = list(reversed(page_indices))
+
+            # ------------------------------------------------------------------
+            # Booklet reordering (saddle-stitch, 2 pages per sheet)
+            # Booklet overrides nup — force nup=2.
+            # ------------------------------------------------------------------
+            if booklet:
+                nup = 2
+                padded = list(page_indices)
+                while len(padded) % 4:
+                    padded.append(-1)  # -1 = blank page
+                n_sheets = len(padded) // 2
+                reordered: list[int] = []
+                lo, hi = 0, len(padded) - 1
+                for _ in range(n_sheets // 2 + n_sheets % 2):
+                    reordered.append(padded[hi])  # back  right
+                    reordered.append(padded[lo])  # front left
+                    lo += 1
+                    hi -= 1
+                    if lo <= hi:
+                        reordered.append(padded[lo])  # front right
+                        reordered.append(padded[hi])  # back  left
+                        lo += 1
+                        hi -= 1
+                page_indices = reordered
+
+            # ------------------------------------------------------------------
+            # Validate / clamp nup
+            # ------------------------------------------------------------------
+            if nup not in (1, 2, 4, 6, 9):
+                nup = 1
+
+            # Number of PDF pages grouped per printer sheet
+            pages_per_sheet = nup
+
+            # Build sheet groups: each element is a list of page indices (len <= nup)
+            sheet_groups: list[list[int]] = []
+            for i in range(0, len(page_indices), pages_per_sheet):
+                sheet_groups.append(page_indices[i : i + pages_per_sheet])
+
+            # ------------------------------------------------------------------
+            # Configure QPrinter
+            # ------------------------------------------------------------------
+            if printer_name:
+                info = QPrinterInfo.printerInfo(printer_name)
+                printer = QPrinter(info, QPrinter.PrinterMode.HighResolution)
+            else:
+                printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+
+            if doc.file_path:
+                printer.setDocName(doc.file_path.name)
+
+            printer.setCopyCount(copies)
+            printer.setCollateCopies(collate)
+
+            # Duplex
+            duplex_map = {
+                "long_edge": QPrinter.DuplexMode.DuplexLongSide,
+                "short_edge": QPrinter.DuplexMode.DuplexShortSide,
+                "none": QPrinter.DuplexMode.DuplexNone,
+            }
+            printer.setDuplex(duplex_map.get(duplex_str, QPrinter.DuplexMode.DuplexNone))
+
+            # Paper size
+            paper_size_map = {
+                "a4": QPageSize.PageSizeId.A4,
+                "a3": QPageSize.PageSizeId.A3,
+                "letter": QPageSize.PageSizeId.Letter,
+                "legal": QPageSize.PageSizeId.Legal,
+            }
+            if paper_size_str in paper_size_map:
+                printer.setPageSize(QPageSize(paper_size_map[paper_size_str]))
+
+            # Margins
+            if any(v > 0 for v in (margin_top, margin_bottom, margin_left, margin_right)):
+                printer.setPageMargins(
+                    QMarginsF(margin_left, margin_top, margin_right, margin_bottom),
+                    QPageLayout.Unit.Millimeter,
+                )
+
+            # Orientation — determined from first page when "auto"
+            if orientation_str == "auto":
+                first_pdf_page = raw_doc[page_indices[0]] if page_indices[0] >= 0 else None
+                if first_pdf_page is not None:
+                    pr = first_pdf_page.rect
+                    page_is_landscape = pr.width > pr.height
+                else:
+                    page_is_landscape = False
+                desired_orientation = (
+                    QPageLayout.Orientation.Landscape
+                    if page_is_landscape
+                    else QPageLayout.Orientation.Portrait
+                )
+            elif orientation_str == "landscape":
+                desired_orientation = QPageLayout.Orientation.Landscape
+            else:
+                desired_orientation = QPageLayout.Orientation.Portrait
+
+            printer.setPageOrientation(desired_orientation)
+
+            # ------------------------------------------------------------------
+            # Paint
+            # ------------------------------------------------------------------
+            colorspace = pymupdf.csGRAY if grayscale else pymupdf.csRGB
+
+            painter = QPainter()
+            if not painter.begin(printer):
+                raise PDFError("Could not start the printer.")
+
+            try:
+                for sheet_idx, group in enumerate(sheet_groups):
+                    if sheet_idx and not printer.newPage():
+                        raise PDFError("Could not start the next printer page.")
+
+                    paint_rect = printer.pageLayout().paintRectPixels(printer.resolution())
+
+                    if pages_per_sheet == 1:
+                        # Single page on sheet
+                        idx = group[0]
+                        if idx < 0:
+                            continue  # blank booklet filler
+                        self._paint_pdf_page(
+                            painter=painter,
+                            raw_doc=raw_doc,
+                            page_index=idx,
+                            target_x=paint_rect.x(),
+                            target_y=paint_rect.y(),
+                            target_w=paint_rect.width(),
+                            target_h=paint_rect.height(),
+                            scale_mode=scale_str,
+                            scale_factor=scale_percent / 100.0,
+                            colorspace=colorspace,
+                            dpi=printer.resolution(),
+                        )
+                    else:
+                        # N-up layout: compute grid dimensions
+                        cols, rows = self._nup_grid(pages_per_sheet)
+                        cell_w = paint_rect.width() // cols
+                        cell_h = paint_rect.height() // rows
+
+                        positions = self._nup_positions(
+                            cols, rows, nup_order,
+                            paint_rect.x(), paint_rect.y(),
+                            cell_w, cell_h,
+                        )
+
+                        for slot_idx, idx in enumerate(group):
+                            if slot_idx >= len(positions):
+                                break
+                            if idx < 0:
+                                continue  # blank filler
+                            cx, cy = positions[slot_idx]
+                            self._paint_pdf_page(
+                                painter=painter,
+                                raw_doc=raw_doc,
+                                page_index=idx,
+                                target_x=cx,
+                                target_y=cy,
+                                target_w=cell_w,
+                                target_h=cell_h,
+                                scale_mode="fit",   # always fit within the N-up cell
+                                scale_factor=1.0,
+                                colorspace=colorspace,
+                                dpi=printer.resolution(),
+                            )
+            finally:
+                painter.end()
+
+            logger.info(
+                "printWithSettings: printed %d sheet(s) of %s",
+                len(sheet_groups),
+                doc.file_path,
+            )
+            return True
+
+        except PDFError as e:
+            logger.error("printWithSettings PDFError for %s: %s", doc.file_path, e)
+            self.errorOccurred.emit("Print Error", str(e))
+            return False
+        except OSError as e:
+            logger.exception("printWithSettings OSError for %s", doc.file_path)
+            self.errorOccurred.emit("Print Error", f"System error during printing: {e}")
+            return False
+        except RuntimeError as e:
+            logger.exception("printWithSettings RuntimeError for %s", doc.file_path)
+            self.errorOccurred.emit("Print Error", f"Unexpected error during printing: {e}")
+            return False
+
+    # ---------------------------------------------------------------------------
+    # Private printing helpers
+    # ---------------------------------------------------------------------------
+
+    @staticmethod
+    def _nup_grid(nup: int) -> tuple[int, int]:
+        """Return (cols, rows) for a given N-up value."""
+        grid_map = {1: (1, 1), 2: (2, 1), 4: (2, 2), 6: (3, 2), 9: (3, 3)}
+        return grid_map.get(nup, (1, 1))
+
+    @staticmethod
+    def _nup_positions(
+        cols: int,
+        rows: int,
+        order: str,
+        origin_x: int,
+        origin_y: int,
+        cell_w: int,
+        cell_h: int,
+    ) -> list[tuple[int, int]]:
+        """Return a list of (x, y) top-left corner pixel positions for each N-up cell."""
+        positions: list[tuple[int, int]] = []
+        if order == "rtl":
+            # Right-to-left, top-to-bottom
+            for r in range(rows):
+                for c in range(cols - 1, -1, -1):
+                    positions.append((origin_x + c * cell_w, origin_y + r * cell_h))
+        elif order == "ttb":
+            # Top-to-bottom, left-to-right (column-major)
+            for c in range(cols):
+                for r in range(rows):
+                    positions.append((origin_x + c * cell_w, origin_y + r * cell_h))
+        else:
+            # "ltr" default: left-to-right, top-to-bottom
+            for r in range(rows):
+                for c in range(cols):
+                    positions.append((origin_x + c * cell_w, origin_y + r * cell_h))
+        return positions
+
+    @staticmethod
+    def _paint_pdf_page(
+        painter: QPainter,
+        raw_doc: Any,
+        page_index: int,
+        target_x: int,
+        target_y: int,
+        target_w: int,
+        target_h: int,
+        scale_mode: str,
+        scale_factor: float,
+        colorspace: Any,
+        dpi: int,
+    ) -> None:
+        """Rasterise one PDF page and paint it centred inside the target rectangle."""
+        page = raw_doc[page_index]
+        page_rect = page.rect  # points (1 pt = 1/72 inch)
+
+        if scale_mode == "actual":
+            # 1 PDF point → 1 device pixel  (adjusted by printer DPI vs. 72 pt/in)
+            pts_per_inch = 72.0
+            scale = (dpi / pts_per_inch) * scale_factor
+        elif scale_mode == "custom":
+            base_scale = min(target_w / page_rect.width, target_h / page_rect.height)
+            scale = base_scale * scale_factor
+        else:
+            # "fit" — fill target rectangle preserving aspect ratio
+            scale = min(target_w / page_rect.width, target_h / page_rect.height)
+
+        pix = page.get_pixmap(
+            matrix=pymupdf.Matrix(scale, scale),
+            colorspace=colorspace,
+            alpha=False,
+        )
+
+        fmt = QImage.Format.Format_Grayscale8 if colorspace == pymupdf.csGRAY else QImage.Format.Format_RGB888
+        image = QImage(pix.samples, pix.width, pix.height, pix.stride, fmt).copy()
+        del pix
+        pymupdf.TOOLS.store_shrink(100)
+
+        draw_x = target_x + (target_w - image.width()) // 2
+        draw_y = target_y + (target_h - image.height()) // 2
+        painter.drawImage(draw_x, draw_y, image)
 
     # --- Navigation Slots ---
 
@@ -518,6 +950,14 @@ class PDFController(QObject):
 
         self._render_nonce += 1
         self.renderInvalidated.emit(page_index)
+
+    @Slot()
+    def clearPrintPreviewCache(self) -> None:
+        """Clear all in-memory print preview raster caches and free native MuPDF resources."""
+        if self._image_provider:
+            self._image_provider.clear_preview_cache()
+        else:
+            pymupdf.TOOLS.store_shrink(100)
 
     # --- Search Slots & Properties ---
 

@@ -18,10 +18,13 @@ Two separate caches prevent thumbnails from evicting full-resolution pages:
 
 from __future__ import annotations
 
+import gc
 import logging
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
+
+import pymupdf
 
 from PySide6.QtCore import QSize, QThread
 from PySide6.QtGui import QImage
@@ -86,9 +89,12 @@ class PDFPageImageProvider(QQuickAsyncImageProvider):
         self._full_cache = PageRenderCache(max_items=12, max_memory_mb=80)
         # Thumbnail cache: keep up to 20 small thumbnails (≤24 MB)
         self._thumb_cache = PageRenderCache(max_items=20, max_memory_mb=24)
+        # Print-preview cache: isolated so previewing does not evict document pages (≤16 MB)
+        self._preview_cache = PageRenderCache(max_items=8, max_memory_mb=16)
 
         self._rasterizer = rasterizer or PDFRasterizer(cache=self._full_cache)
         self._thumb_rasterizer = PDFRasterizer(cache=self._thumb_cache)
+        self._preview_rasterizer = PDFRasterizer(cache=self._preview_cache)
         self._doc_manager = get_document_manager()
 
         # Thread pool: 2 workers is enough — MuPDF is single-threaded per-document
@@ -114,10 +120,18 @@ class PDFPageImageProvider(QQuickAsyncImageProvider):
     def invalidate_page(self, doc_id: str, page_index: int) -> None:
         self._full_cache.invalidate_page(doc_id, page_index)
         self._thumb_cache.invalidate_page(doc_id, page_index)
+        self._preview_cache.invalidate_page(doc_id, page_index)
 
     def invalidate_document(self, doc_id: str) -> None:
         self._full_cache.invalidate_document(doc_id)
         self._thumb_cache.invalidate_document(doc_id)
+        self._preview_cache.invalidate_document(doc_id)
+
+    def clear_preview_cache(self) -> None:
+        """Drop all cached preview images and free native MuPDF store memory immediately."""
+        self._preview_cache.clear()
+        pymupdf.TOOLS.store_shrink(100)
+        gc.collect()
 
     # ------------------------------------------------------------------
     # QQuickAsyncImageProvider entry-point (called on Qt thread-pool thread)
@@ -154,6 +168,8 @@ class PDFPageImageProvider(QQuickAsyncImageProvider):
             zoom = float(query_params.get("zoom", ["1.0"])[0])
             rotation = int(query_params.get("rot", ["0"])[0])
             is_thumb = "thumb" in query_params
+            is_preview = "preview" in query_params
+            is_gray = "gray" in query_params or "grayscale" in query_params
 
             doc = self._doc_manager.get_document(doc_id)
             if not doc or not doc.is_open:
@@ -163,11 +179,15 @@ class PDFPageImageProvider(QQuickAsyncImageProvider):
             if is_thumb:
                 thumb_zoom = float(query_params.get("zoom", ["0.2"])[0])
                 img = self._thumb_rasterizer.render_page_to_qimage(
-                    doc, page_index, zoom=thumb_zoom, rotation=rotation, dpi_scale=1.0
+                    doc, page_index, zoom=thumb_zoom, rotation=rotation, dpi_scale=1.0, grayscale=is_gray
+                )
+            elif is_preview:
+                img = self._preview_rasterizer.render_page_to_qimage(
+                    doc, page_index, zoom=zoom, rotation=rotation, dpi_scale=1.0, grayscale=is_gray
                 )
             else:
                 img = self._rasterizer.render_page_to_qimage(
-                    doc, page_index, zoom=zoom, rotation=rotation
+                    doc, page_index, zoom=zoom, rotation=rotation, grayscale=is_gray
                 )
 
             response._deliver(img)

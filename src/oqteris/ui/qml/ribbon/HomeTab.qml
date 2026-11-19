@@ -54,7 +54,7 @@ Row {
             tooltipText: "Print Document"
             shortcutText: "Ctrl+P"
             enabled: pdfController.hasDocument
-            onClicked: pdfController.printDocument()
+            onClicked: printDialogLoader.openPrintDialog()
         }
     }
 

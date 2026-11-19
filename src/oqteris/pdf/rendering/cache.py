@@ -64,18 +64,18 @@ class PageRenderCache:
     # Public API
     # ------------------------------------------------------------------
 
-    def get(self, doc_id: str, page_index: int, zoom: float, rotation: int) -> Optional[QImage]:
+    def get(self, doc_id: str, page_index: int, zoom: float, rotation: int, grayscale: bool = False) -> Optional[QImage]:
         """Return the cached QImage, or None if not present (promotes to MRU)."""
-        key = (doc_id, page_index, round(zoom, 2), rotation % 360)
+        key = (doc_id, page_index, round(zoom, 2), rotation % 360, grayscale)
         with self._lock:
             if key in self._cache:
                 self._cache.move_to_end(key)
                 return self._cache[key].image
         return None
 
-    def put(self, doc_id: str, page_index: int, zoom: float, rotation: int, image: QImage) -> None:
+    def put(self, doc_id: str, page_index: int, zoom: float, rotation: int, image: QImage, grayscale: bool = False) -> None:
         """Insert or replace a cache entry, evicting LRU entries to stay within limits."""
-        key = (doc_id, page_index, round(zoom, 2), rotation % 360)
+        key = (doc_id, page_index, round(zoom, 2), rotation % 360, grayscale)
         size_bytes = image.sizeInBytes()
 
         # If a single page exceeds the whole budget, skip caching to avoid

@@ -88,6 +88,7 @@ ApplicationWindow {
     OcrDialog { id: ocrDlg }
     OptimizeDialog { id: optimizeDlg }
     PasswordDialog { id: passwordDlg }
+    PrintDialog { id: printDlg }
 
     QtObject {
         id: trustStoreDialogLoader
@@ -126,6 +127,11 @@ ApplicationWindow {
         id: optimizeDialogLoader
         function openOptimizeDialog() { optimizeDlg.open() }
         function setOutPath(path) { optimizeDlg.setOutPath(path) }
+    }
+
+    QtObject {
+        id: printDialogLoader
+        function openPrintDialog() { printDlg.open() }
     }
 
     Connections {
@@ -359,7 +365,7 @@ ApplicationWindow {
     Shortcut {
         sequences: [ StandardKey.Print ]
         enabled: pdfController.hasDocument
-        onActivated: pdfController.printDocument()
+        onActivated: printDialogLoader.openPrintDialog()
     }
 
     Shortcut {
