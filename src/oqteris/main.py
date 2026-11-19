@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, Qt, QUrl
+from PySide6.QtCore import QCoreApplication, QEvent, QObject, Qt, QUrl
 from PySide6.QtGui import QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
@@ -44,6 +44,26 @@ from oqteris.ui.controllers.update_controller import UpdateController
 logger = logging.getLogger("oqteris.main")
 
 
+class _FileOpenEventFilter(QObject):
+    """Event filter to capture macOS Finder open-file requests (QFileOpenEvent)."""
+
+    def __init__(self, callback, parent=None):
+        super().__init__(parent)
+        self._callback = callback
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Type.FileOpen:
+            file_path = ""
+            if hasattr(event, "file") and event.file():
+                file_path = event.file()
+            elif hasattr(event, "url") and event.url().isLocalFile():
+                file_path = event.url().toLocalFile()
+            if file_path:
+                self._callback(file_path)
+                return True
+        return super().eventFilter(watched, event)
+
+
 def main() -> int:
     """Launch Oqteris desktop application."""
     # Step 1: Storage and Logging initialization
@@ -64,6 +84,8 @@ def main() -> int:
     app.setOrganizationName(ORGANIZATION_NAME)
     app.setOrganizationDomain(ORGANIZATION_DOMAIN)
     app.setApplicationVersion(APP_VERSION)
+    if hasattr(app, "setDesktopFileName"):
+        app.setDesktopFileName(APP_IDENTIFIER)
 
     # Step 4: Application Icon
     assets_dir = get_assets_dir()
@@ -115,6 +137,10 @@ def main() -> int:
                 pdf_controller.openDocument(path)
 
     coordinator.files_received.connect(on_files_received)
+
+    # Listen for macOS Finder file open events (QFileOpenEvent)
+    file_open_filter = _FileOpenEventFilter(pdf_controller.openDocument, parent=app)
+    app.installEventFilter(file_open_filter)
 
     # Step 9: Register Controllers into QML Context
     root_context = engine.rootContext()

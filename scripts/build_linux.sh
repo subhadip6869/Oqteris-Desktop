@@ -26,6 +26,7 @@ mkdir -p "$DEB_DIR/opt/oqteris"
 mkdir -p "$DEB_DIR/usr/bin"
 mkdir -p "$DEB_DIR/usr/share/applications"
 mkdir -p "$DEB_DIR/usr/share/icons/hicolor/256x256/apps"
+mkdir -p "$DEB_DIR/usr/share/icons/hicolor/256x256/mimetypes"
 
 # Copy standalone binaries to /opt/oqteris
 cp -r dist/Oqteris.dist/* "$DEB_DIR/opt/oqteris/"
@@ -38,9 +39,41 @@ exec /opt/oqteris/Oqteris "$@"
 EOF
 chmod +x "$DEB_DIR/usr/bin/oqteris"
 
-# Desktop entry and icon
+# Desktop entry and app icons
 cp packaging/linux/app.vercel.originsd.oqteris.desktop "$DEB_DIR/usr/share/applications/"
 cp assets/icons/app/oqteris-logo.png "$DEB_DIR/usr/share/icons/hicolor/256x256/apps/app.vercel.originsd.oqteris.png"
+cp assets/icons/app/oqteris-logo.png "$DEB_DIR/usr/share/icons/hicolor/256x256/apps/oqteris.png"
+
+# Document thumbnail icons for PDF mime types
+cp assets/icons/document/oqteris-document.png "$DEB_DIR/usr/share/icons/hicolor/256x256/mimetypes/application-pdf.png"
+cp assets/icons/document/oqteris-document.png "$DEB_DIR/usr/share/icons/hicolor/256x256/mimetypes/application-x-pdf.png"
+cp assets/icons/document/oqteris-document.png "$DEB_DIR/usr/share/icons/hicolor/256x256/mimetypes/gnome-mime-application-pdf.png"
+
+# Post-install hook: refresh desktop database and icon cache
+cat << 'EOF' > "$DEB_DIR/DEBIAN/postinst"
+#!/bin/sh
+set -e
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications || true
+fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+fi
+EOF
+chmod 0755 "$DEB_DIR/DEBIAN/postinst"
+
+# Post-remove hook: refresh desktop database and icon cache
+cat << 'EOF' > "$DEB_DIR/DEBIAN/postrm"
+#!/bin/sh
+set -e
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications || true
+fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+fi
+EOF
+chmod 0755 "$DEB_DIR/DEBIAN/postrm"
 
 # Control file
 cat << 'EOF' > "$DEB_DIR/DEBIAN/control"

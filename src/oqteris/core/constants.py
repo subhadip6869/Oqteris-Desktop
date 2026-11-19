@@ -53,17 +53,31 @@ IPC_PORT_FILE_NAME: str = "oqteris.ipc"
 
 
 def get_assets_dir() -> Path:
-    """Resolve the assets directory across development and frozen environments."""
+    """Resolve the assets directory across development, frozen bundles, and installed environments."""
     # 1. PyInstaller bundle directory (_MEIPASS)
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         cand = Path(sys._MEIPASS) / "assets"
         if cand.is_dir():
             return cand
+        cand_internal = Path(sys._MEIPASS) / "_internal" / "assets"
+        if cand_internal.is_dir():
+            return cand_internal
 
-    # 2. Alongside executable
-    exe_assets = Path(sys.executable).parent / "assets"
-    if exe_assets.is_dir():
-        return exe_assets
+    # 2. Alongside executable or in _internal directory
+    exe_dir = Path(sys.executable).parent
+    candidates = [
+        exe_dir / "assets",
+        exe_dir / "_internal" / "assets",
+        # macOS App Bundle (Contents/Resources/assets or Contents/MacOS/assets)
+        exe_dir.parent / "Resources" / "assets",
+        exe_dir.parent / "Resources",
+        # Linux standard locations (/opt/oqteris/assets, /usr/share/oqteris/assets)
+        Path("/opt/oqteris/assets"),
+        Path("/usr/share/oqteris/assets"),
+    ]
+    for cand in candidates:
+        if cand.is_dir() and (cand / "icons").is_dir():
+            return cand
 
     # 3. Development source tree (search up parent directories)
     for p in Path(__file__).resolve().parents:

@@ -88,6 +88,13 @@ def run_pyinstaller_build() -> int:
         expected_app = DIST_DIR / "Oqteris.app"
         if expected_app.exists():
             print(f"macOS Application Bundle successfully generated at: {expected_app}")
+            # Stage document icon into Contents/Resources for Finder document thumbnails
+            res_dir = expected_app / "Contents" / "Resources"
+            doc_icns = ASSETS_DIR / "icons" / "document" / "oqteris-document.icns"
+            if res_dir.is_dir() and doc_icns.is_file():
+                dest_doc_icns = res_dir / "oqteris-document.icns"
+                shutil.copy2(doc_icns, dest_doc_icns)
+                print(f"Staged document icon to: {dest_doc_icns}")
         else:
             print(f"WARNING: Expected macOS bundle not found at {expected_app}", file=sys.stderr)
 

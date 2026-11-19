@@ -249,7 +249,19 @@ if system == "Darwin":
             "CFBundleIdentifier": "app.vercel.originsd.oqteris",
             "CFBundleVersion": "1.2.0",
             "CFBundleShortVersionString": "1.2.0",
+            "CFBundlePackageType": "APPL",
             "NSHighResolutionCapable": "True",
             "LSMinimumSystemVersion": "12.0",
+            "CFBundleDocumentTypes": [
+                {
+                    "CFBundleTypeName": "PDF Document",
+                    "CFBundleTypeRole": "Editor",
+                    "LSHandlerRank": "Owner",
+                    "CFBundleTypeIconFile": "oqteris-document.icns",
+                    "CFBundleTypeExtensions": ["pdf"],
+                    "CFBundleTypeMIMETypes": ["application/pdf"],
+                    "LSItemContentTypes": ["com.adobe.pdf"],
+                }
+            ],
         },
     )

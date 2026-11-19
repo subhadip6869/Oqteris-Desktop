@@ -12,6 +12,12 @@ if [ ! -d "dist/Oqteris.app" ]; then
     exit 1
 fi
 
+# Ensure document icon is placed in Contents/Resources for Finder associations
+if [ -f "assets/icons/document/oqteris-document.icns" ]; then
+    mkdir -p "dist/Oqteris.app/Contents/Resources"
+    cp "assets/icons/document/oqteris-document.icns" "dist/Oqteris.app/Contents/Resources/oqteris-document.icns"
+fi
+
 echo "==> Preparing DMG staging area..."
 STAGING_DIR="dist/dmg_staging"
 rm -rf "$STAGING_DIR"
