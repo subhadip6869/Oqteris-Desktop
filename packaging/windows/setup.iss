@@ -48,19 +48,38 @@ Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "{app}\resources\oqteris-logo.ico"
 
 [Registry]
-; Register Oqteris.PDF ProgID
+; 1. Register Oqteris.PDF ProgID (Standard Windows Document Association)
 Root: HKA; Subkey: "Software\Classes\Oqteris.PDF"; ValueType: string; ValueName: ""; ValueData: "PDF Document"; Flags: uninsdeletekey; Tasks: associatepdf
-Root: HKA; Subkey: "Software\Classes\Oqteris.PDF\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\resources\oqteris-document.ico,0"; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Oqteris.PDF"; ValueType: string; ValueName: "FriendlyTypeName"; ValueData: "PDF Document"; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Oqteris.PDF\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\resources\oqteris-document.ico"; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Oqteris.PDF\CurVer"; ValueType: string; ValueName: ""; ValueData: "Oqteris.PDF"; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Oqteris.PDF\shell"; ValueType: string; ValueName: ""; ValueData: "open"; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Oqteris.PDF\shell\open"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#MyAppName}"; Tasks: associatepdf
 Root: HKA; Subkey: "Software\Classes\Oqteris.PDF\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Tasks: associatepdf
 
-; Associate .pdf extension
+; 2. Associate .pdf extension in HKCR / Software\Classes
+Root: HKA; Subkey: "Software\Classes\.pdf"; ValueType: string; ValueName: ""; ValueData: "Oqteris.PDF"; Tasks: associatepdf
 Root: HKA; Subkey: "Software\Classes\.pdf\OpenWithProgids"; ValueType: string; ValueName: "Oqteris.PDF"; ValueData: ""; Flags: uninsdeletevalue; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\.pdf\OpenWithList\{#MyAppExeName}"; ValueType: string; ValueName: ""; ValueData: ""; Flags: uninsdeletekey; Tasks: associatepdf
 
-; Register with Windows RegisteredApplications
-Root: HKLM; Subkey: "Software\OriginSD\Oqteris\Capabilities"; ValueType: string; ValueName: "ApplicationName"; ValueData: "Oqteris"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "Software\OriginSD\Oqteris\Capabilities"; ValueType: string; ValueName: "ApplicationDescription"; ValueData: "Professional Cross-Platform PDF Reader and Editor"
-Root: HKLM; Subkey: "Software\OriginSD\Oqteris\Capabilities\FileAssociations"; ValueType: string; ValueName: ".pdf"; ValueData: "Oqteris.PDF"
-Root: HKLM; Subkey: "Software\RegisteredApplications"; ValueType: string; ValueName: "Oqteris"; ValueData: "Software\OriginSD\Oqteris\Capabilities"; Flags: uninsdeletevalue
+; 3. Applications registration for Windows Default Apps & Open With dialog
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#MyAppName}"; Flags: uninsdeletekey; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}"; ValueType: string; ValueName: "ApplicationCompany"; ValueData: "{#MyAppPublisher}"; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\resources\oqteris-document.ico"; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".pdf"; ValueData: ""; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}\shell\open"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#MyAppName}"; Tasks: associatepdf
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Tasks: associatepdf
+
+; 4. App Paths registration
+Root: HKA; Subkey: "Software\Microsoft\Windows\CurrentVersion\App Paths\{#MyAppExeName}"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName}"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Microsoft\Windows\CurrentVersion\App Paths\{#MyAppExeName}"; ValueType: string; ValueName: "Path"; ValueData: "{app}"
+
+; 5. Windows Default Programs / RegisteredApplications
+Root: HKA; Subkey: "Software\OriginSD\Oqteris\Capabilities"; ValueType: string; ValueName: "ApplicationName"; ValueData: "{#MyAppName}"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\OriginSD\Oqteris\Capabilities"; ValueType: string; ValueName: "ApplicationDescription"; ValueData: "Professional Cross-Platform PDF Reader and Editor"
+Root: HKA; Subkey: "Software\OriginSD\Oqteris\Capabilities"; ValueType: string; ValueName: "ApplicationIcon"; ValueData: "{app}\resources\oqteris-logo.ico"
+Root: HKA; Subkey: "Software\OriginSD\Oqteris\Capabilities\FileAssociations"; ValueType: string; ValueName: ".pdf"; ValueData: "Oqteris.PDF"
+Root: HKA; Subkey: "Software\RegisteredApplications"; ValueType: string; ValueName: "{#MyAppName}"; ValueData: "Software\OriginSD\Oqteris\Capabilities"; Flags: uninsdeletevalue
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

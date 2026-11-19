@@ -1,0 +1,37 @@
+# UTF-8
+#
+# Windows Version Resource for Oqteris
+# Used by PyInstaller to embed PE VERSIONINFO metadata into Oqteris.exe
+#
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1, 2, 0, 0),
+    prodvers=(1, 2, 0, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo(
+      [
+        StringTable(
+          '040904b0',
+          [
+            StringStruct('CompanyName', 'OriginSD'),
+            StringStruct('FileDescription', 'Oqteris PDF Editor'),
+            StringStruct('FileVersion', '1.2.0.0'),
+            StringStruct('InternalName', 'Oqteris'),
+            StringStruct('LegalCopyright', '© 2026 OriginSD. All rights reserved.'),
+            StringStruct('OriginalFilename', 'Oqteris.exe'),
+            StringStruct('ProductName', 'Oqteris'),
+            StringStruct('ProductVersion', '1.2.0.0'),
+          ]
+        )
+      ]
+    ),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)

@@ -194,10 +194,14 @@ a.datas = [d for d in a.datas if _keep_data(d)]
 pyz = PYZ(a.pure)
 
 icon_file = None
+version_file = None
 if system == "Windows":
     ico = ASSETS_DIR / "icons" / "app" / "oqteris-logo.ico"
     if ico.exists():
         icon_file = str(ico)
+    ver_path = PROJECT_ROOT / "packaging" / "windows" / "version_info.txt"
+    if ver_path.exists():
+        version_file = str(ver_path)
 elif system == "Darwin":
     icns = ASSETS_DIR / "icons" / "app" / "oqteris-logo.icns"
     if icns.exists():
@@ -220,6 +224,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=icon_file,
+    version=version_file,
 )
 
 coll = COLLECT(
