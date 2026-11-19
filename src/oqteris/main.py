@@ -38,6 +38,7 @@ from oqteris.ui.controllers.organize_controller import (
 from oqteris.ui.controllers.pdf_controller import PDFController
 from oqteris.ui.controllers.ribbon_controller import RibbonController
 from oqteris.ui.controllers.signature_controller import SignatureController
+from oqteris.ui.controllers.update_controller import UpdateController
 
 logger = logging.getLogger("oqteris.main")
 
@@ -103,6 +104,7 @@ def main() -> int:
     organize_controller = OrganizeController(pdf_controller=pdf_controller, parent=app)
     ocr_controller = OCRController(pdf_controller=pdf_controller, parent=app)
     settings_controller = SettingsController(parent=app)
+    update_controller = UpdateController(parent=app)
 
     # Hook IPC file opening to pdf_controller
     def on_files_received(file_paths: list[str]) -> None:
@@ -123,6 +125,7 @@ def main() -> int:
     root_context.setContextProperty("organizeController", organize_controller)
     root_context.setContextProperty("ocrController", ocr_controller)
     root_context.setContextProperty("settingsController", settings_controller)
+    root_context.setContextProperty("updateController", update_controller)
 
     # Step 10: Load initial file argument if passed
     initial_files = [a for a in sys.argv[1:] if Path(a).is_file() and a.lower().endswith(".pdf")]

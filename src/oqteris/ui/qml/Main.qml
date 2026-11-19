@@ -89,6 +89,7 @@ ApplicationWindow {
     OptimizeDialog { id: optimizeDlg }
     PasswordDialog { id: passwordDlg }
     PrintDialog { id: printDlg }
+    UpdateDialog { id: updateDlg }
 
     QtObject {
         id: trustStoreDialogLoader
@@ -132,6 +133,11 @@ ApplicationWindow {
     QtObject {
         id: printDialogLoader
         function openPrintDialog() { printDlg.open() }
+    }
+
+    QtObject {
+        id: updateDialogLoader
+        function openUpdateDialog() { updateDlg.openAndCheck() }
     }
 
     Connections {

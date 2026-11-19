@@ -103,11 +103,23 @@ Dialog {
             anchors.horizontalCenter: parent.horizontalCenter
         }
 
-        OqButton {
-            text: "Close"
-            isPrimary: true
+        Row {
             anchors.horizontalCenter: parent.horizontalCenter
-            onClicked: root.close()
+            spacing: 12
+
+            OqButton {
+                text: "Check for Updates"
+                onClicked: {
+                    root.close()
+                    updateDialogLoader.openUpdateDialog()
+                }
+            }
+
+            OqButton {
+                text: "Close"
+                isPrimary: true
+                onClicked: root.close()
+            }
         }
     }
 }

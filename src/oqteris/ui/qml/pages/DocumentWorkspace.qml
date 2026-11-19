@@ -105,11 +105,10 @@ Rectangle {
                             z: 2
                             color: closeMouse.containsMouse ? Theme.buttonPressed : "transparent"
 
-                            Text {
+                            OqIcon {
                                 anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 9
-                                font.bold: true
+                                name: "close"
+                                size: 10
                                 color: closeMouse.containsMouse ? Theme.brandPrimary : Theme.textSecondary
                             }
 

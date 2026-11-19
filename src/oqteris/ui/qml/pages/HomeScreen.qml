@@ -84,6 +84,13 @@ Rectangle {
 
         OqToolButton {
             anchors.verticalCenter: parent.verticalCenter
+            iconName: "update"
+            tooltipText: "Check for Updates"
+            onClicked: updateDialogLoader.openUpdateDialog()
+        }
+
+        OqToolButton {
+            anchors.verticalCenter: parent.verticalCenter
             iconName: appController.isDarkMode ? "theme-light" : "theme-dark"
             tooltipText: "Toggle Theme"
             onClicked: appController.toggleTheme()

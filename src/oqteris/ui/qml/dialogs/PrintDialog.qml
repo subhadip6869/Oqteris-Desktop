@@ -205,7 +205,7 @@ Dialog {
                     }
                 }
 
-                // Close button (✕)
+                // Close button (cross icon)
                 Rectangle {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
@@ -214,11 +214,10 @@ Dialog {
                     radius: 4
                     color: closeArea.containsMouse ? Theme.buttonHover : "transparent"
 
-                    Text {
+                    OqIcon {
                         anchors.centerIn: parent
-                        text: "✕"
-                        font.pixelSize: 13
-                        font.family: Theme.fontFamily
+                        name: "close"
+                        size: 14
                         color: closeArea.containsMouse ? Theme.textPrimary : Theme.textSecondary
                     }
 

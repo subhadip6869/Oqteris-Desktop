@@ -72,11 +72,11 @@ Item {
                     color: clearBtnMouse.containsMouse ? Theme.buttonHover : "transparent"
                     anchors.verticalCenter: parent.verticalCenter
 
-                    Text {
+                    OqIcon {
                         anchors.centerIn: parent
-                        text: "✕"
-                        font.pixelSize: 11
-                        color: Theme.textSecondary
+                        name: "close"
+                        size: 12
+                        color: clearBtnMouse.containsMouse ? Theme.textPrimary : Theme.textSecondary
                     }
 
                     MouseArea {

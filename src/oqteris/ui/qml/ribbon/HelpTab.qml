@@ -19,6 +19,13 @@ Row {
         }
 
         OqRibbonButton {
+            text: "Check for\nUpdates"
+            iconName: "update"
+            tooltipText: "Check for the latest version from GitHub"
+            onClicked: updateDialogLoader.openUpdateDialog()
+        }
+
+        OqRibbonButton {
             text: "Settings"
             iconName: "settings"
             tooltipText: "Application Preferences"
