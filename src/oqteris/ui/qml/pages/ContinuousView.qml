@@ -214,12 +214,14 @@ ListView {
                 visible: enabled
                 hoverEnabled: true
                 cursorShape: Qt.IBeamCursor
+                preventStealing: true
 
                 property real pressX: 0
                 property real pressY: 0
                 property bool isDragging: false
 
                 onPressed: (mouse) => {
+                    root.interactive = false
                     pressX = mouse.x
                     pressY = mouse.y
                     isDragging = false
@@ -237,9 +239,15 @@ ListView {
                 }
 
                 onReleased: (mouse) => {
+                    root.interactive = true
                     if (!isDragging || (Math.abs(mouse.x - pressX) < 4 && Math.abs(mouse.y - pressY) < 4)) {
                         pdfController.clearSelection()
                     }
+                    isDragging = false
+                }
+
+                onCanceled: {
+                    root.interactive = true
                     isDragging = false
                 }
             }
@@ -412,8 +420,10 @@ ListView {
                     visible: enabled
                     hoverEnabled: true
                     cursorShape: Qt.CrossCursor
+                    preventStealing: true
 
                     onPressed: (mouse) => {
+                        root.interactive = false
                         markupCanvas.currentStroke = [{ x: mouse.x, y: mouse.y }]
                         markupCanvas.requestPaint()
                     }
@@ -424,6 +434,7 @@ ListView {
                     }
 
                     onReleased: {
+                        root.interactive = true
                         if (markupCanvas.currentStroke.length >= 2) {
                             var normStroke = []
                             for (var i = 0; i < markupCanvas.currentStroke.length; i++) {
@@ -434,6 +445,12 @@ ListView {
                             }
                             annotationController.addInkDrawing(index, [normStroke], "#000000", 2.0)
                         }
+                        markupCanvas.currentStroke = []
+                        markupCanvas.requestPaint()
+                    }
+
+                    onCanceled: {
+                        root.interactive = true
                         markupCanvas.currentStroke = []
                         markupCanvas.requestPaint()
                     }
