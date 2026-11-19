@@ -3,7 +3,7 @@
 from pathlib import Path
 import numpy as np
 from PIL import Image
-import fitz
+import pymupdf as fitz
 
 from oqteris.pdf.document.document import PDFDocument
 from oqteris.pdf.ocr.detector import ScannedPDFDetector

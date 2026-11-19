@@ -19,9 +19,14 @@ datas = [
 ]
 
 # PySide6/qml ships with PySide6-Addons; guard against environments where it is absent.
+# Only bundle QML modules actually used by Oqteris (QtQuick, Controls, Dialogs, Layouts, etc.)
+# Avoid copying huge unused QML modules (QtWebEngine, Qt3D, QtQuick3D, QtCharts, etc.)
 _pyside6_qml = PYSIDE6_DIR / "qml"
 if _pyside6_qml.is_dir():
-    datas.append((str(_pyside6_qml), "PySide6/qml"))
+    qml_needed = {"QtCore", "QtQml", "QtQuick", "Qt"}
+    for item in _pyside6_qml.iterdir():
+        if item.is_dir() and item.name in qml_needed:
+            datas.append((str(item), f"PySide6/qml/{item.name}"))
 
 hiddenimports = [
     "oqteris",
@@ -67,16 +72,36 @@ excludes = [
     "matplotlib",
     "scipy",
     "pandas",
+    "mypy",
     "PySide6.Qt3DCore",
     "PySide6.Qt3DRender",
     "PySide6.Qt3DAnimation",
+    "PySide6.Qt3DInput",
+    "PySide6.Qt3DLogic",
+    "PySide6.Qt3DExtras",
     "PySide6.QtSensors",
     "PySide6.QtSerialPort",
     "PySide6.QtBluetooth",
     "PySide6.QtNfc",
     "PySide6.QtWebEngineCore",
     "PySide6.QtWebEngineQuick",
+    "PySide6.QtWebEngineWidgets",
     "PySide6.QtQuick3D",
+    "PySide6.QtQuick3DRuntimeRender",
+    "PySide6.QtQuick3DPhysics",
+    "PySide6.QtCharts",
+    "PySide6.QtGraphs",
+    "PySide6.QtMultimedia",
+    "PySide6.QtMultimediaWidgets",
+    "PySide6.QtPositioning",
+    "PySide6.QtRemoteObjects",
+    "PySide6.QtScxml",
+    "PySide6.QtSpatialAudio",
+    "PySide6.QtTest",
+    "PySide6.QtDataVisualization",
+    "PySide6.QtPdf",
+    "PySide6.QtPdfWidgets",
+    "PySide6.QtPdfQuick",
 ]
 
 a = Analysis(
@@ -90,8 +115,74 @@ a = Analysis(
     runtime_hooks=[],
     excludes=excludes,
     noarchive=False,
-    optimize=0,
+    optimize=2,
 )
+
+# Strip unwanted heavy native binaries (e.g. WebEngine ~195MB, FFmpeg video DLL ~30MB, 3D ~25MB)
+EXCLUDED_BINARY_PATTERNS = {
+    # WebEngine / Chromium
+    "qt6webengine",
+    "qtwebengine",
+    # 3D and Quick3D
+    "qt63d",
+    "qt6quick3d",
+    # Unused Qt multimedia / peripherals / charts
+    "qt6charts",
+    "qt6graphs",
+    "qt6sensors",
+    "qt6serialport",
+    "qt6bluetooth",
+    "qt6nfc",
+    "qt6pdf",
+    "qt6spatialaudio",
+    "qt6multimedia",
+    "qt6positioning",
+    "qt6remoteobjects",
+    "qt6scxml",
+    "qt6test",
+    "qt6datavisualization",
+    "qt6virtualkeyboard",
+    # OpenCV video codec DLL (unneeded for PDF documents)
+    "opencv_videoio_ffmpeg",
+}
+
+def _keep_binary(entry):
+    stem = Path(entry[0]).stem.lower()
+    return not any(pat in stem for pat in EXCLUDED_BINARY_PATTERNS)
+
+a.binaries = [b for b in a.binaries if _keep_binary(b)]
+
+# Strip unwanted bundled data (e.g. PyMuPDF ONNX models ~49MB, C++ dev SDK ~6.5MB, Qt translations ~8.5MB)
+EXCLUDED_DATA_PATTERNS = [
+    "resources/onnx",
+    "resources\\onnx",
+    "mupdf-devel",
+    "pyside6/translations",
+    "pyside6\\translations",
+    "pyside6/qml/qtwebengine",
+    "pyside6\\qml\\qtwebengine",
+    "pyside6/qml/qt3d",
+    "pyside6\\qml\\qt3d",
+    "pyside6/qml/qtquick3d",
+    "pyside6\\qml\\qtquick3d",
+    "pyside6/qml/qtcharts",
+    "pyside6\\qml\\qtcharts",
+    "pyside6/qml/qtgraphs",
+    "pyside6\\qml\\qtgraphs",
+    "pyside6/qml/qtmultimedia",
+    "pyside6\\qml\\qtmultimedia",
+    "pyside6/qml/qtsensors",
+    "pyside6\\qml\\qtsensors",
+    "pyside6/qml/qtpositioning",
+    "pyside6\\qml\\qtpositioning",
+]
+
+def _keep_data(entry):
+    target = (entry[1] if len(entry) > 1 else "").lower().replace("/", "\\")
+    source = (entry[0] if len(entry) > 0 else "").lower().replace("/", "\\")
+    return not any(pat.replace("/", "\\") in target or pat.replace("/", "\\") in source for pat in EXCLUDED_DATA_PATTERNS)
+
+a.datas = [d for d in a.datas if _keep_data(d)]
 
 pyz = PYZ(a.pure)
 
