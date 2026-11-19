@@ -147,8 +147,9 @@ EXCLUDED_BINARY_PATTERNS = {
 }
 
 def _keep_binary(entry):
-    stem = Path(entry[0]).stem.lower()
-    return not any(pat in stem for pat in EXCLUDED_BINARY_PATTERNS)
+    dest = str(entry[0]).lower()
+    src = str(entry[1]).lower() if len(entry) > 1 else ""
+    return not any(pat in dest or pat in src for pat in EXCLUDED_BINARY_PATTERNS)
 
 a.binaries = [b for b in a.binaries if _keep_binary(b)]
 
@@ -178,9 +179,15 @@ EXCLUDED_DATA_PATTERNS = [
 ]
 
 def _keep_data(entry):
-    target = (entry[1] if len(entry) > 1 else "").lower().replace("/", "\\")
-    source = (entry[0] if len(entry) > 0 else "").lower().replace("/", "\\")
-    return not any(pat.replace("/", "\\") in target or pat.replace("/", "\\") in source for pat in EXCLUDED_DATA_PATTERNS)
+    dest = str(entry[0]).lower().replace("/", "\\")
+    src = (str(entry[1]).lower().replace("/", "\\")) if len(entry) > 1 else ""
+    # Exclude data folders (ONNX models, translations, etc.)
+    if any(pat.replace("/", "\\") in dest or pat.replace("/", "\\") in src for pat in EXCLUDED_DATA_PATTERNS):
+        return False
+    # Also exclude any unwanted binary/plugin that PyInstaller collected into datas
+    if any(pat in dest or pat in src for pat in EXCLUDED_BINARY_PATTERNS):
+        return False
+    return True
 
 a.datas = [d for d in a.datas if _keep_data(d)]
 

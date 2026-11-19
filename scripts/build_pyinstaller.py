@@ -61,7 +61,22 @@ def run_pyinstaller_build() -> int:
             print(f"Staging {oqteris_dir} -> {oqteris_dist} for installers...")
             if oqteris_dist.exists():
                 shutil.rmtree(oqteris_dist)
-            shutil.copytree(oqteris_dir, oqteris_dist)
+
+            # Clean any dangling/broken symlinks on Unix before staging
+            if system == "Linux":
+                for item in oqteris_dir.rglob("*"):
+                    if item.is_symlink() and not item.exists():
+                        try:
+                            item.unlink()
+                        except OSError:
+                            pass
+
+            shutil.copytree(
+                oqteris_dir,
+                oqteris_dist,
+                symlinks=(system != "Windows"),
+                ignore_dangling_symlinks=True,
+            )
 
         # Verify executable exists
         expected_exe = oqteris_dist / ("Oqteris.exe" if system == "Windows" else "Oqteris")
