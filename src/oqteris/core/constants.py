@@ -50,3 +50,26 @@ MAX_PAGES_BATCH_RENDER: int = 20
 
 # IPC Socket Name
 IPC_PORT_FILE_NAME: str = "oqteris.ipc"
+
+
+def get_assets_dir() -> Path:
+    """Resolve the assets directory across development and frozen environments."""
+    # 1. PyInstaller bundle directory (_MEIPASS)
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        cand = Path(sys._MEIPASS) / "assets"
+        if cand.is_dir():
+            return cand
+
+    # 2. Alongside executable
+    exe_assets = Path(sys.executable).parent / "assets"
+    if exe_assets.is_dir():
+        return exe_assets
+
+    # 3. Development source tree (search up parent directories)
+    for p in Path(__file__).resolve().parents:
+        cand = p / "assets"
+        if cand.is_dir() and (cand / "icons").is_dir():
+            return cand
+
+    # Fallback to local assets relative to repo root
+    return Path(__file__).resolve().parents[3] / "assets"

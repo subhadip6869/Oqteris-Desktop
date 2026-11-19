@@ -11,6 +11,8 @@ from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtQuick import QQuickImageProvider
 from PySide6.QtSvg import QSvgRenderer
 
+from oqteris.core.constants import get_assets_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,7 +28,7 @@ class IconImageProvider(QQuickImageProvider):
     def __init__(self, icons_dir: Optional[Path] = None) -> None:
         super().__init__(QQuickImageProvider.ImageType.Image)
         if icons_dir is None:
-            self._icons_dir = Path(__file__).resolve().parents[3] / "assets" / "icons" / "ui"
+            self._icons_dir = get_assets_dir() / "icons" / "ui"
         else:
             self._icons_dir = icons_dir
 

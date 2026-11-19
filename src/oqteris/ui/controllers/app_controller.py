@@ -23,6 +23,7 @@ from oqteris.core.constants import (
     ORGANIZATION_NAME,
     ORGANIZATION_URL,
     REPOSITORY_URL,
+    get_assets_dir,
 )
 from oqteris.platform.integration import get_platform_integration
 from oqteris.repositories.bookmarks_repo import BookmarksRepository
@@ -92,13 +93,13 @@ class AppController(QObject):
 
     @Property(str, constant=True)
     def logoPath(self) -> str:
-        assets_dir = Path(__file__).resolve().parents[4] / "assets"
+        assets_dir = get_assets_dir()
         logo_file = assets_dir / "icons" / "app" / "oqteris-logo.png"
         return QUrl.fromLocalFile(str(logo_file)).toString()
 
     @Property(str, constant=True)
     def uiIconsPath(self) -> str:
-        assets_dir = Path(__file__).resolve().parents[4] / "assets" / "icons" / "ui"
+        assets_dir = get_assets_dir() / "icons" / "ui"
         return QUrl.fromLocalFile(str(assets_dir)).toString()
 
     @Property(str, constant=True)

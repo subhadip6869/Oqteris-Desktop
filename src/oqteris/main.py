@@ -22,6 +22,7 @@ from oqteris.core.constants import (
     APP_VERSION,
     ORGANIZATION_DOMAIN,
     ORGANIZATION_NAME,
+    get_assets_dir,
 )
 from oqteris.core.logging import setup_logging
 from oqteris.database.connection import get_db_manager
@@ -65,7 +66,7 @@ def main() -> int:
     app.setApplicationVersion(APP_VERSION)
 
     # Step 4: Application Icon
-    assets_dir = Path(__file__).resolve().parent.parent.parent / "assets"
+    assets_dir = get_assets_dir()
     icon_ico = assets_dir / "icons" / "app" / "oqteris-logo.ico"
     icon_png = assets_dir / "icons" / "app" / "oqteris-logo.png"
 
