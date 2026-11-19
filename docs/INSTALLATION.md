@@ -6,10 +6,10 @@ Pre-built binaries for supported operating systems are available on the [GitHub 
 
 | Operating System | Package Type | Filename |
 |---|---|---|
-| **Windows (x64)** | Setup Installer | `Oqteris-1.0.0-Windows-x64-Setup.exe` |
-| **macOS (Apple Silicon)** | DMG Disk Image | `Oqteris-1.0.0-macOS-arm64.dmg` |
-| **Linux (Debian / Ubuntu)** | Debian Package | `Oqteris-1.0.0-Linux-x64.deb` |
-| **Linux (Fedora / RHEL)** | RPM Package | `Oqteris-1.0.0-Linux-x64.rpm` |
+| **Windows (x64)** | Setup Installer | `Oqteris-X.X.X-Windows-x64-Setup.exe` |
+| **macOS (Apple Silicon)** | DMG Disk Image | `Oqteris-X.X.X-macOS-arm64.dmg` |
+| **Linux (Debian / Ubuntu)** | Debian Package | `Oqteris-X.X.X-Linux-x64.deb` |
+| **Linux (Fedora / RHEL)** | RPM Package | `Oqteris-X.X.X-Linux-x64.rpm` |
 
 ---
 

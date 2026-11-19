@@ -17,6 +17,11 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
+# Redirect user app data to temp dir during tests to prevent sandbox permission errors
+_test_appdata_dir = tempfile.mkdtemp(prefix="oq_appdata_")
+os.environ["LOCALAPPDATA"] = _test_appdata_dir
+os.environ["APPDATA"] = _test_appdata_dir
+
 from oqteris.config.settings import SettingsManager
 from oqteris.database.connection import DatabaseManager
 from oqteris.platform.storage import StorageManager

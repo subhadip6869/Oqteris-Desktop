@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-from PySide6.QtCore import QObject, Property, Signal, Slot
+from PySide6.QtCore import QObject, Property, Signal, Slot, QUrl
 
 from oqteris.config.settings import get_settings_manager
 from oqteris.core.constants import (
@@ -90,6 +90,21 @@ class AppController(QObject):
     def osName(self) -> str:
         return platform.system()
 
+    @Property(str, constant=True)
+    def logoPath(self) -> str:
+        assets_dir = Path(__file__).resolve().parents[4] / "assets"
+        logo_file = assets_dir / "icons" / "app" / "oqteris-logo.png"
+        return QUrl.fromLocalFile(str(logo_file)).toString()
+
+    @Property(str, constant=True)
+    def uiIconsPath(self) -> str:
+        assets_dir = Path(__file__).resolve().parents[4] / "assets" / "icons" / "ui"
+        return QUrl.fromLocalFile(str(assets_dir)).toString()
+
+    @Property(str, constant=True)
+    def ribbonIconsPath(self) -> str:
+        return self.uiIconsPath
+
     # --- Theme Management ---
 
     @Property(str, notify=themeChanged)
@@ -138,7 +153,7 @@ class AppController(QObject):
                 "fileName": r.file_name,
                 "fileSize": r.file_size_bytes,
                 "pageCount": r.page_count,
-                "lastOpened": r.last_opened_at.strftime("%Y-%m-%d %H:%M"),
+                "lastOpened": r.last_opened_at.strftime("%b %d, %Y %H:%M"),
                 "isPinned": r.is_pinned,
                 "isMissing": r.is_missing,
             }
@@ -157,7 +172,7 @@ class AppController(QObject):
 
     @Slot()
     def clearRecentFiles(self) -> None:
-        self._recent_repo.clear(keep_pinned=True)
+        self._recent_repo.clear(keep_pinned=False)
         self.recentFilesChanged.emit()
 
     def record_opened_file(self, file_path: str, size: int = 0, pages: int = 0) -> None:

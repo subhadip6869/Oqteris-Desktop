@@ -4,7 +4,7 @@
 ; Application: Oqteris
 
 #define MyAppName "Oqteris"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.2.0"
 #define MyAppPublisher "OriginSD"
 #define MyAppURL "https://originsd.vercel.app"
 #define MyAppExeName "Oqteris.exe"

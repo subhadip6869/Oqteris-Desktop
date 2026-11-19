@@ -1,23 +1,25 @@
 # Oqteris Project Roadmap
 
-## Version 1.0.0 (Current Release)
+## Version 1.2.0 (Current Release)
 - [x] Modern ribbon desktop interface in Qt Quick / QML.
-- [x] PyMuPDF rendering engine with bounded LRU memory tile caching.
+- [x] Dedicated HomeScreen landing view when no documents are loaded.
+- [x] PyMuPDF rendering engine with bounded LRU memory tile caching and native leak prevention.
+- [x] High-DPI supersampling and screen DPR detection for crisp PDF text.
 - [x] Continuous and single-page viewing modes with fit-to-width and fit-page presets.
 - [x] Full-text search with bounding box highlights and match navigation.
 - [x] Text insertion and direct text replacement with background redaction.
 - [x] Markup tools: highlights, underlines, strikethrough, sticky notes, ink drawing, shapes, and stamps.
 - [x] Page organization: page deletion, extraction, rotation, PDF splitting and merging.
-- [x] pyHanko digital signature validation, certificate inspection, and PKCS#12 signing.
+- [x] pyHanko digital signature validation, appearance emulation, trust store, and PKCS#12 signing.
 - [x] AcroForm inspection, field value updating, and field resetting.
 - [x] Tesseract OCR and OpenCV deskew/binarization for searchable PDF creation.
 - [x] pikepdf stream compression and image optimization.
 - [x] SQLite relational storage for recent files, bookmarks, and trust stores.
 - [x] Cross-platform native storage layouts (Windows, Linux, macOS).
 - [x] Single-instance local IPC coordinator.
-- [x] Automated GitHub Actions CI and multi-platform release workflows.
+- [x] Automated GitHub Actions CI and multi-platform PyInstaller release workflows.
 
-## Version 1.1.0 (Upcoming)
+## Version 1.3.0 (Upcoming)
 - [ ] Hardware-accelerated PDF rendering via Vulkan / Metal backends.
 - [ ] Advanced redaction workflows (pattern-based automated redaction for SSN, emails, credit cards).
 - [ ] PDF/A compliance validation and conversion profiles (PDF/A-1b, PDF/A-2b).

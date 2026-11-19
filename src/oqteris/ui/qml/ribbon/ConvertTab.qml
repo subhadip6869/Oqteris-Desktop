@@ -13,7 +13,7 @@ Row {
 
         OqRibbonButton {
             text: "To Images"
-            iconSymbol: "🖼"
+            iconName: "thumbnails"
             tooltipText: "Export PDF Pages as PNG Images"
             enabled: pdfController.hasDocument
             onClicked: fileDialogLoader.selectExportImagesDir()
@@ -21,7 +21,7 @@ Row {
 
         OqRibbonButton {
             text: "Images to PDF"
-            iconSymbol: "📄+"
+            iconName: "save-as"
             tooltipText: "Create PDF from Multiple Images"
             onClicked: fileDialogLoader.openImagesToConvert()
         }
@@ -33,7 +33,7 @@ Row {
 
         OqRibbonButton {
             text: "OCR Text"
-            iconSymbol: "🔍T"
+            iconName: "ocr"
             tooltipText: "Recognize Scanned Text via OCR"
             enabled: pdfController.hasDocument
             onClicked: ocrDialogLoader.openOcrDialog()
@@ -41,7 +41,7 @@ Row {
 
         OqRibbonButton {
             text: "Compress"
-            iconSymbol: "🗜"
+            iconName: "compress"
             tooltipText: "Optimize and Compress PDF File Size"
             enabled: pdfController.hasDocument
             onClicked: optimizeDialogLoader.openOptimizeDialog()

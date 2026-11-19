@@ -7,13 +7,43 @@ Row {
     spacing: 0
     height: 88
 
-    // Group 1: Content Tools
+    // Group 1: History
+    OqRibbonGroup {
+        title: "History"
+
+        Column {
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 3
+
+            OqRibbonButton {
+                text: "Undo"
+                iconName: "undo"
+                isLarge: false
+                tooltipText: "Undo Recent Action"
+                shortcutText: "Ctrl+Z"
+                enabled: ribbonController.canUndo
+                onClicked: ribbonController.undo()
+            }
+
+            OqRibbonButton {
+                text: "Redo"
+                iconName: "redo"
+                isLarge: false
+                tooltipText: "Redo Action"
+                shortcutText: "Ctrl+Y"
+                enabled: ribbonController.canRedo
+                onClicked: ribbonController.redo()
+            }
+        }
+    }
+
+    // Group 2: Insert Tools
     OqRibbonGroup {
         title: "Insert"
 
         OqRibbonButton {
             text: "Add Text"
-            iconSymbol: "🔤"
+            iconName: "select-text"
             tooltipText: "Insert Text into PDF"
             isChecked: ribbonController.activeTool === "add_text"
             enabled: pdfController.hasDocument
@@ -22,7 +52,7 @@ Row {
 
         OqRibbonButton {
             text: "Add Image"
-            iconSymbol: "🖼"
+            iconName: "thumbnails"
             tooltipText: "Insert Image into Page"
             isChecked: ribbonController.activeTool === "add_image"
             enabled: pdfController.hasDocument
@@ -34,7 +64,7 @@ Row {
 
         OqRibbonButton {
             text: "Add Link"
-            iconSymbol: "🔗"
+            iconName: "share"
             tooltipText: "Create Hyperlink"
             isChecked: ribbonController.activeTool === "add_link"
             enabled: pdfController.hasDocument
@@ -48,7 +78,7 @@ Row {
 
         OqRibbonButton {
             text: "Edit Text"
-            iconSymbol: "✏"
+            iconName: "draw"
             tooltipText: "Direct Text Editing & Replacement"
             isChecked: ribbonController.activeTool === "edit_text"
             enabled: pdfController.hasDocument

@@ -13,7 +13,7 @@ Row {
 
         OqRibbonButton {
             text: "Sign PDF"
-            iconSymbol: "🔏"
+            iconName: "signatures"
             tooltipText: "Add Cryptographic Digital Signature"
             enabled: pdfController.hasDocument
             onClicked: signDialogLoader.openSignDialog()
@@ -21,7 +21,7 @@ Row {
 
         OqRibbonButton {
             text: "Validate"
-            iconSymbol: "🛡"
+            iconName: "shield"
             tooltipText: "Inspect and Validate Signatures"
             enabled: pdfController.hasDocument
             onClicked: {
@@ -38,12 +38,9 @@ Row {
 
         OqRibbonButton {
             text: "Certificates"
-            iconSymbol: "📜"
+            iconName: "cert"
             tooltipText: "Manage Trusted Root Certificates"
-            onClicked: {
-                mainPanelState.showLeftPanel = true
-                mainPanelState.currentPanelTab = "signatures"
-            }
+            onClicked: trustStoreDialogLoader.openTrustStoreDialog()
         }
     }
 }

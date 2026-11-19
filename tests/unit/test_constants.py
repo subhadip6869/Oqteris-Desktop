@@ -15,7 +15,7 @@ from oqteris.core.constants import (
 
 def test_application_metadata():
     assert APP_NAME == "Oqteris"
-    assert APP_VERSION == "1.0.0"
+    assert APP_VERSION == "1.2.0"
     assert APP_IDENTIFIER == "app.vercel.originsd.oqteris"
     assert ORGANIZATION_NAME == "OriginSD"
     assert ORGANIZATION_URL == "https://originsd.vercel.app"

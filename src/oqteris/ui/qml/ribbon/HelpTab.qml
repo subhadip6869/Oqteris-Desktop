@@ -12,24 +12,24 @@ Row {
         title: "About"
 
         OqRibbonButton {
-            text: "About Oqteris"
-            iconSymbol: "ℹ"
+            text: "About\nOqteris"
+            iconName: "properties"
             tooltipText: "Application Information and Credits"
             onClicked: aboutDialogLoader.openAboutDialog()
         }
 
         OqRibbonButton {
-            text: "Settings"
-            iconSymbol: "⚙"
-            tooltipText: "Application Preferences"
-            onClicked: settingsDialogLoader.openSettingsDialog()
+            text: "Check for\nUpdates"
+            iconName: "update"
+            tooltipText: "Check for the latest version from GitHub"
+            onClicked: updateDialogLoader.openUpdateDialog()
         }
 
         OqRibbonButton {
-            text: "Toggle Theme"
-            iconSymbol: appController.isDarkMode ? "☀" : "🌙"
-            tooltipText: "Switch Light / Dark Theme"
-            onClicked: appController.toggleTheme()
+            text: "Settings"
+            iconName: "settings"
+            tooltipText: "Application Preferences"
+            onClicked: settingsDialogLoader.openSettingsDialog()
         }
     }
 }

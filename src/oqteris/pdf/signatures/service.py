@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 from asn1crypto import pem, x509, cms, core
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa, ec
