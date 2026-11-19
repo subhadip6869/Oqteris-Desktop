@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from PIL import Image
-import fitz
+import pymupdf as fitz
 from oqteris.pdf.optimisation.service import OptimizationService
 
 

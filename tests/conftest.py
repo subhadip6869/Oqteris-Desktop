@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Generator
 
-import fitz  # PyMuPDF
+import pymupdf as fitz
 import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
