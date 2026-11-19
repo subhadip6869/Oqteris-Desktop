@@ -130,6 +130,9 @@ def test_pdf_controller_prints_all_pages(qapp, sample_pdf_normal: Path, monkeypa
         def __init__(self, mode):
             self._print_range = QPrinter.PrintRange.AllPages
 
+        def setPageOrientation(self, orientation):
+            pass
+
         def setDocName(self, name):
             pass
 

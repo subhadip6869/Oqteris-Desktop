@@ -410,7 +410,7 @@ class PDFController(QObject):
                         if page_is_landscape
                         else QPageLayout.Orientation.Portrait
                     )
-                    if position == 0:
+                    if position == 0 and hasattr(printer, "setPageOrientation"):
                         # Set orientation before the first page (before painting begins
                         # for real — QPainter is already started so we just adjust
                         # for the scale calculation below; the printer dialog may have
@@ -692,7 +692,8 @@ class PDFController(QObject):
             else:
                 desired_orientation = QPageLayout.Orientation.Portrait
 
-            printer.setPageOrientation(desired_orientation)
+            if hasattr(printer, "setPageOrientation"):
+                printer.setPageOrientation(desired_orientation)
 
             # ------------------------------------------------------------------
             # Paint

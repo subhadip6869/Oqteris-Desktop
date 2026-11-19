@@ -59,7 +59,9 @@ def run_pyinstaller_build() -> int:
     if system in ("Windows", "Linux"):
         if oqteris_dir.exists():
             print(f"Staging {oqteris_dir} -> {oqteris_dist} for installers...")
-            shutil.copytree(oqteris_dir, oqteris_dist, dirs_exist_ok=True)
+            if oqteris_dist.exists():
+                shutil.rmtree(oqteris_dist)
+            shutil.copytree(oqteris_dir, oqteris_dist)
 
         # Verify executable exists
         expected_exe = oqteris_dist / ("Oqteris.exe" if system == "Windows" else "Oqteris")
