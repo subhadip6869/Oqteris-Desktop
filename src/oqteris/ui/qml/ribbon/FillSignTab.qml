@@ -13,7 +13,7 @@ Row {
 
         OqRibbonButton {
             text: "Reset Form"
-            iconSymbol: "🔄"
+            iconName: "rotate"
             tooltipText: "Reset Form Fields to Defaults"
             enabled: pdfController.hasDocument
             onClicked: {
@@ -28,7 +28,7 @@ Row {
 
         OqRibbonButton {
             text: "Draw Signature"
-            iconSymbol: "✍"
+            iconName: "draw"
             tooltipText: "Draw and Place Visual Signature"
             enabled: pdfController.hasDocument
             onClicked: ribbonController.selectTool("ink")
@@ -36,7 +36,7 @@ Row {
 
         OqRibbonButton {
             text: "Digital Sign"
-            iconSymbol: "🔏"
+            iconName: "signatures"
             tooltipText: "Cryptographically Sign PDF with Certificate"
             enabled: pdfController.hasDocument
             onClicked: signDialogLoader.openSignDialog()
@@ -44,7 +44,7 @@ Row {
 
         OqRibbonButton {
             text: "Signature Panel"
-            iconSymbol: "📋"
+            iconName: "sidebar"
             tooltipText: "Open Digital Signatures Panel"
             enabled: pdfController.hasDocument
             onClicked: {
@@ -56,7 +56,7 @@ Row {
 
         OqRibbonButton {
             text: "Validate All"
-            iconSymbol: "🛡"
+            iconName: "shield"
             tooltipText: "Validate All Digital Signatures"
             enabled: pdfController.hasDocument
             onClicked: signatureController.inspectSignatures()

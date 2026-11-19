@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import "../components"
 import "../themes"
 
 Item {
@@ -106,14 +107,14 @@ Item {
                         width: 24
                         height: 24
                         radius: 3
-                        color: delMouse.containsMouse ? "#FFEBEE" : "transparent"
+                        color: delMouse.containsMouse ? (Theme.isDark ? "#381A1A" : "#FEE2E2") : "transparent"
                         anchors.verticalCenter: parent.verticalCenter
 
-                        Text {
+                        OqIcon {
                             anchors.centerIn: parent
-                            text: "✕"
-                            color: "#D32F2F"
-                            font.pixelSize: 11
+                            name: "close"
+                            size: 12
+                            color: delMouse.containsMouse ? Theme.statusError : Theme.textSecondary
                         }
 
                         MouseArea {

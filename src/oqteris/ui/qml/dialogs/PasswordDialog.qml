@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import "../components"
 import "../themes"
 
 Dialog {
@@ -65,12 +66,13 @@ Dialog {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 12
 
-            Button {
+            OqButton {
                 text: "Unlock"
+                isPrimary: true
                 onClicked: root.submit()
             }
 
-            Button {
+            OqButton {
                 text: "Cancel"
                 onClicked: root.close()
             }

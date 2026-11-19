@@ -109,6 +109,84 @@ def test_pdf_controller_multi_tabs_and_close(qapp, temp_dir: Path, sample_pdf_no
     assert pdf_ctrl.hasDocument is False
 
 
+def test_pdf_controller_prints_all_pages(qapp, sample_pdf_normal: Path, monkeypatch):
+    from PySide6.QtCore import QRect
+    from PySide6.QtPrintSupport import QPrinter
+    from PySide6.QtWidgets import QDialog
+
+    import oqteris.ui.controllers.pdf_controller as pdf_controller_module
+
+    printed_images = []
+    new_pages = []
+
+    class FakePageLayout:
+        def paintRectPixels(self, resolution):
+            return QRect(0, 0, 600, 800)
+
+    class FakePrinter:
+        PrinterMode = QPrinter.PrinterMode
+        PrintRange = QPrinter.PrintRange
+
+        def __init__(self, mode):
+            self._print_range = QPrinter.PrintRange.AllPages
+
+        def setDocName(self, name):
+            pass
+
+        def pageLayout(self):
+            return FakePageLayout()
+
+        def resolution(self):
+            return 72
+
+        def printRange(self):
+            return self._print_range
+
+        def newPage(self):
+            new_pages.append(True)
+            return True
+
+    class FakePrintDialog:
+        def __init__(self, printer, parent):
+            pass
+
+        def setWindowTitle(self, title):
+            pass
+
+        def setMinMax(self, minimum, maximum):
+            pass
+
+        def setOption(self, option, enabled):
+            pass
+
+        def exec(self):
+            return QDialog.DialogCode.Accepted
+
+    class FakePainter:
+        def begin(self, printer):
+            return True
+
+        def drawImage(self, x, y, image):
+            printed_images.append(image)
+
+        def end(self):
+            return True
+
+    monkeypatch.setattr(pdf_controller_module, "QPrinter", FakePrinter)
+    monkeypatch.setattr(pdf_controller_module, "QPrintDialog", FakePrintDialog)
+    monkeypatch.setattr(pdf_controller_module, "QPainter", FakePainter)
+
+    pdf_ctrl = PDFController()
+    assert pdf_ctrl.openDocument(str(sample_pdf_normal)) is True
+
+    assert pdf_ctrl.printDocument() is True
+    assert len(printed_images) == 2
+    assert len(new_pages) == 1
+    assert all(not image.isNull() for image in printed_images)
+
+    pdf_ctrl.closeDocument()
+
+
 def test_ribbon_controller(qapp):
     ribbon = RibbonController()
     assert ribbon.currentTab == "Home"

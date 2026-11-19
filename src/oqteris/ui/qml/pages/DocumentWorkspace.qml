@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import QtQuick.Layouts
 import "../components"
 import "../themes"
@@ -105,11 +105,10 @@ Rectangle {
                             z: 2
                             color: closeMouse.containsMouse ? Theme.buttonPressed : "transparent"
 
-                            Text {
+                            OqIcon {
                                 anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 9
-                                font.bold: true
+                                name: "close"
+                                size: 10
                                 color: closeMouse.containsMouse ? Theme.brandPrimary : Theme.textSecondary
                             }
 
@@ -353,136 +352,11 @@ Rectangle {
             width: parent.width
             height: parent.height - (docTabBar.visible ? 32 : 0) - (signatureStatusBar.visible ? signatureStatusBar.height : 0) - statusBar.height
 
-            // Welcome View (No document open)
-            Item {
-                id: welcomeView
+            // Welcome / HomeScreen View (No document open)
+            HomeScreen {
+                id: homeScreen
                 anchors.fill: parent
                 visible: !pdfController.hasDocument
-
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 20
-                    width: Math.min(parent.width - 40, 520)
-
-                    Column {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        spacing: 8
-
-                        Text {
-                            text: "Oqteris"
-                            font.pixelSize: 32
-                            font.bold: true
-                            font.family: Theme.fontFamily
-                            color: Theme.brandPrimary
-                            anchors.horizontalCenter: parent.horizontalCenter
-                        }
-
-                        Text {
-                            text: "Professional Cross-Platform PDF Reader & Editor"
-                            font.pixelSize: Theme.fontSizeMedium
-                            color: Theme.textSecondary
-                            anchors.horizontalCenter: parent.horizontalCenter
-                        }
-                    }
-
-                    Rectangle {
-                        width: 140
-                        height: 38
-                        radius: 4
-                        color: Theme.brandPrimary
-                        anchors.horizontalCenter: parent.horizontalCenter
-
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 8
-                            Text { text: "📂"; font.pixelSize: 14; color: "#FFFFFF" }
-                            Text {
-                                text: "Open PDF"
-                                font.pixelSize: Theme.fontSizeNormal
-                                font.bold: true
-                                color: "#FFFFFF"
-                            }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: fileDialogLoader.openFile()
-                        }
-                    }
-
-                    // Recent Files Box
-                    Rectangle {
-                        width: parent.width
-                        height: 240
-                        radius: 6
-                        color: Theme.cardBackground
-                        border.color: Theme.borderSubtle
-                        border.width: 1
-                        visible: appController.recentFiles.length > 0
-
-                        Column {
-                            anchors.fill: parent
-                            anchors.margins: 12
-                            spacing: 8
-
-                            Text {
-                                text: "Recent Documents"
-                                font.pixelSize: Theme.fontSizeNormal
-                                font.weight: Font.DemiBold
-                                color: Theme.textPrimary
-                            }
-
-                            ListView {
-                                width: parent.width
-                                height: parent.height - 30
-                                clip: true
-                                spacing: 4
-                                model: appController.recentFiles
-
-                                delegate: Rectangle {
-                                    width: parent.width
-                                    height: 32
-                                    radius: 3
-                                    color: rMouse.containsMouse ? Theme.buttonHover : "transparent"
-
-                                    Row {
-                                        anchors.fill: parent
-                                        anchors.margins: 4
-                                        spacing: 8
-
-                                        Text { text: "📄"; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
-
-                                        Text {
-                                            text: modelData.fileName
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            font.weight: Font.DemiBold
-                                            color: modelData.isMissing ? Theme.textDisabled : Theme.textPrimary
-                                            elide: Text.ElideRight
-                                            width: parent.width - 140
-                                            anchors.verticalCenter: parent.verticalCenter
-                                        }
-
-                                        Text {
-                                            text: modelData.lastOpened
-                                            font.pixelSize: 10
-                                            color: Theme.textSecondary
-                                            anchors.verticalCenter: parent.verticalCenter
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        id: rMouse
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: pdfController.openDocument(modelData.filePath)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
             }
 
             // PDF Canvas Switcher
@@ -508,7 +382,7 @@ Rectangle {
                 anchors.rightMargin: 12
                 spacing: 0
 
-                // Left: Page Navigation Controls
+                // Left: Page Navigation Controls (When Document is open)
                 RowLayout {
                     Layout.alignment: Qt.AlignVCenter
                     spacing: 6
@@ -555,6 +429,38 @@ Rectangle {
                     }
                 }
 
+                // Left: Status on Homescreen (When no Document is open)
+                RowLayout {
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 16
+                    visible: !pdfController.hasDocument
+
+                    Text {
+                        text: "Ready"
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.family: Theme.fontFamily
+                        color: Theme.textSecondary
+                    }
+
+                    Row {
+                        spacing: 4
+                        Text {
+                            text: "•"
+                            font.pixelSize: 14
+                            font.bold: true
+                            color: "#10B981"
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: "Autosaved"
+                            font.pixelSize: 11
+                            font.family: Theme.fontFamily
+                            color: "#059669"
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
                 // Flexible Spacer
                 Item {
                     Layout.fillWidth: true
@@ -565,11 +471,10 @@ Rectangle {
                 RowLayout {
                     Layout.alignment: Qt.AlignVCenter
                     spacing: 6
-                    visible: pdfController.hasDocument
 
                     OqToolButton {
                         Layout.alignment: Qt.AlignVCenter
-                        iconSymbol: "🔍-"
+                        iconSymbol: "-"
                         tooltipText: "Zoom Out"
                         onClicked: pdfController.zoomOut()
                     }
@@ -617,7 +522,7 @@ Rectangle {
 
                     OqToolButton {
                         Layout.alignment: Qt.AlignVCenter
-                        iconSymbol: "🔍+"
+                        iconSymbol: "+"
                         tooltipText: "Zoom In"
                         onClicked: pdfController.zoomIn()
                     }
@@ -637,12 +542,14 @@ Rectangle {
                         Layout.preferredWidth: 1
                         Layout.preferredHeight: 16
                         color: Theme.divider
+                        visible: pdfController.hasDocument
                     }
 
                     OqToolButton {
                         Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "↔"
                         tooltipText: "Fit to Width"
+                        visible: pdfController.hasDocument
                         onClicked: pdfController.fitWidth(viewContainer.width)
                     }
 
@@ -650,6 +557,7 @@ Rectangle {
                         Layout.alignment: Qt.AlignVCenter
                         iconSymbol: "↕"
                         tooltipText: "Fit Entire Page"
+                        visible: pdfController.hasDocument
                         onClicked: pdfController.fitPage(viewContainer.width, viewContainer.height)
                     }
                 }

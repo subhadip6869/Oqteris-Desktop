@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import "../components"
 import "../themes"
 
 Dialog {
@@ -29,13 +30,13 @@ Dialog {
         }
 
         Row {
-            spacing: 12
-            CheckBox {
+            spacing: 16
+            OqCheckBox {
                 id: compressImagesCheck
                 text: "Compress Images"
                 checked: true
             }
-            CheckBox {
+            OqCheckBox {
                 id: removeMetaCheck
                 text: "Remove Metadata"
                 checked: false
@@ -53,11 +54,12 @@ Dialog {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Slider {
+            OqSlider {
                 id: qualitySlider
                 from: 20
                 to: 95
                 value: 75
+                width: 160
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -84,7 +86,7 @@ Dialog {
                         color: Theme.textPrimary
                     }
                 }
-                Button {
+                OqButton {
                     text: "Browse"
                     height: 28
                     onClicked: fileDialogLoader.saveOptimizedFileAs()
@@ -103,8 +105,9 @@ Dialog {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 12
 
-            Button {
+            OqButton {
                 text: "Compress"
+                isPrimary: true
                 enabled: optOutInput.text.length > 0
                 onClicked: {
                     var res = organizeController.compressPdf(
@@ -119,7 +122,7 @@ Dialog {
                 }
             }
 
-            Button {
+            OqButton {
                 text: "Close"
                 onClicked: root.close()
             }

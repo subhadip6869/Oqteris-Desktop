@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import "../themes"
 
 ListView {
@@ -8,13 +8,39 @@ ListView {
     boundsBehavior: Flickable.StopAtBounds
     spacing: 16
 
+    // Ctrl + Mouse Wheel Zoom
+    WheelHandler {
+        id: wheelHandler
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        acceptedModifiers: Qt.ControlModifier
+        onWheel: (event) => {
+            if (event.angleDelta.y > 0) {
+                pdfController.zoomIn()
+            } else if (event.angleDelta.y < 0) {
+                pdfController.zoomOut()
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Memory & rendering optimisation: buffer 1500px (≈1 page ahead/behind)
+    // -----------------------------------------------------------------------
+    // With the async image provider, rendering runs on a background thread so
+    // the UI thread is never blocked by MuPDF decode.  A cacheBuffer of 1500px
+    // pre-instantiates the next page's delegate before it enters the viewport,
+    // giving the background render time to finish before the page is visible —
+    // which eliminates the "blank flash" on scroll while still keeping only
+    // 3–4 delegates alive at any time (memory stays bounded by the render cache).
+    cacheBuffer: 1500
+    reuseItems: true
+
     model: pdfController.pageCount
 
     ScrollBar.vertical: ScrollBar {
         id: vScrollBar
         policy: ScrollBar.AsNeeded
         width: 12
-        z: 10
+        z: 50
         visible: vScrollBar.size < 1.0
 
         contentItem: Rectangle {
@@ -36,19 +62,62 @@ ListView {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Hand Tool: Viewport Pan Drag Area
+    // -----------------------------------------------------------------------
+    MouseArea {
+        id: contHandPanArea
+        parent: root
+        anchors.fill: root
+        z: 40
+        enabled: ribbonController.activeTool === "hand"
+        visible: enabled
+        hoverEnabled: true
+        cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+
+        property real startMouseX: 0
+        property real startMouseY: 0
+        property real startContentX: 0
+        property real startContentY: 0
+
+        onPressed: (mouse) => {
+            startMouseX = mouse.x
+            startMouseY = mouse.y
+            startContentX = root.contentX
+            startContentY = root.contentY
+        }
+
+        onPositionChanged: (mouse) => {
+            if (pressed) {
+                var dx = mouse.x - startMouseX
+                var dy = mouse.y - startMouseY
+                var maxY = Math.max(0, root.contentHeight - root.height)
+                var maxX = Math.max(0, root.contentWidth - root.width)
+                root.contentY = Math.max(0, Math.min(maxY, startContentY - dy))
+                if (maxX > 0) {
+                    root.contentX = Math.max(0, Math.min(maxX, startContentX - dx))
+                }
+            }
+        }
+    }
+
     // Track visible page index while scrolling
+    property bool isInternalScroll: false
+
     onContentYChanged: {
         var idx = indexAt(contentX + width / 2, contentY + 100)
         if (idx >= 0 && idx < pdfController.pageCount && pdfController.currentPage !== idx) {
+            isInternalScroll = true
             pdfController.currentPage = idx
+            isInternalScroll = false
         }
     }
 
     Connections {
         target: pdfController
         function onCurrentPageChanged() {
-            // When navigating externally (e.g. from thumbnail or search)
-            if (!root.moving && !root.dragging) {
+            // Only reposition when navigating externally (e.g. from thumbnail or search)
+            if (!root.isInternalScroll && !root.moving && !root.dragging) {
                 root.positionViewAtIndex(pdfController.currentPage, ListView.Beginning)
             }
         }
@@ -72,7 +141,6 @@ ListView {
             Image {
                 id: pageImage
                 anchors.centerIn: parent
-                // Scale width and height by current zoom level
                 width: {
                     var geoms = pdfController.pageGeometries
                     if (geoms && index < geoms.length) {
@@ -97,6 +165,150 @@ ListView {
                      "?zoom=" + pdfController.zoomLevel +
                      "&rot=" + pdfController.rotation +
                      "&v=" + pdfController.renderNonce) : ""
+
+                // Loading placeholder: keeps correct page dimensions while
+                // the async background render completes — no blank flash or
+                // layout jitter.
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#F5F5F5"
+                    visible: pageImage.status === Image.Loading
+                    opacity: 0.85
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: (index + 1).toString()
+                        color: "#CCCCCC"
+                        font.pixelSize: Math.min(parent.width, parent.height) * 0.08
+                        font.bold: true
+                    }
+                }
+            }
+
+            // ---------------------------------------------------------------
+            // Line-by-Line Text Selection Highlights
+            // ---------------------------------------------------------------
+            Repeater {
+                model: (pdfController.selectionPageIndex === index) ? pdfController.selectionRects : []
+
+                Rectangle {
+                    z: 25
+                    x: modelData.x0 * pdfController.zoomLevel
+                    y: modelData.y0 * pdfController.zoomLevel
+                    width: Math.max(2, (modelData.x1 - modelData.x0) * pdfController.zoomLevel)
+                    height: Math.max(2, (modelData.y1 - modelData.y0) * pdfController.zoomLevel)
+                    color: Theme.brandPrimary
+                    opacity: 0.30
+                    radius: 2
+                }
+            }
+
+            // ---------------------------------------------------------------
+            // Select Tool: Line-by-Line Text Selection MouseArea
+            // ---------------------------------------------------------------
+            MouseArea {
+                id: contSelectMouseArea
+                anchors.fill: pageImage
+                z: 30
+                enabled: ribbonController.activeTool === "select"
+                visible: enabled
+                hoverEnabled: true
+                cursorShape: Qt.IBeamCursor
+
+                property real pressX: 0
+                property real pressY: 0
+                property bool isDragging: false
+
+                onPressed: (mouse) => {
+                    pressX = mouse.x
+                    pressY = mouse.y
+                    isDragging = false
+                    pdfController.currentPage = index
+                    var zoom = pdfController.zoomLevel
+                    pdfController.updateSelection(index, pressX / zoom, pressY / zoom, pressX / zoom, pressY / zoom)
+                }
+
+                onPositionChanged: (mouse) => {
+                    if (pressed) {
+                        isDragging = true
+                        var zoom = pdfController.zoomLevel
+                        pdfController.updateSelection(index, pressX / zoom, pressY / zoom, mouse.x / zoom, mouse.y / zoom)
+                    }
+                }
+
+                onReleased: (mouse) => {
+                    if (!isDragging || (Math.abs(mouse.x - pressX) < 4 && Math.abs(mouse.y - pressY) < 4)) {
+                        pdfController.clearSelection()
+                    }
+                    isDragging = false
+                }
+            }
+
+            // ---------------------------------------------------------------
+            // Non-Text Objects Overlay (Images & Vector Shapes)
+            // ---------------------------------------------------------------
+            Repeater {
+                model: (ribbonController.activeTool === "select") ? pdfController.getPageObjects(index) : []
+
+                Item {
+                    z: 32
+                    x: modelData.x0 * pdfController.zoomLevel
+                    y: modelData.y0 * pdfController.zoomLevel
+                    width: Math.max(8, (modelData.x1 - modelData.x0) * pdfController.zoomLevel)
+                    height: Math.max(8, (modelData.y1 - modelData.y0) * pdfController.zoomLevel)
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+
+                        onClicked: (mouse) => {
+                            pdfController.selectObject(index, modelData)
+                        }
+                    }
+                }
+            }
+
+            // ---------------------------------------------------------------
+            // Selected Object Box with 8 Foxit/Adobe Control Handles
+            // ---------------------------------------------------------------
+            Rectangle {
+                id: selectedObjBox
+                visible: pdfController.hasSelectedObject && pdfController.selectedObject.pageIndex === index
+                z: 34
+                x: ((pdfController.selectedObject && pdfController.selectedObject.x0) || 0) * pdfController.zoomLevel
+                y: ((pdfController.selectedObject && pdfController.selectedObject.y0) || 0) * pdfController.zoomLevel
+                width: Math.max(8, (((pdfController.selectedObject && pdfController.selectedObject.x1) || 0) - ((pdfController.selectedObject && pdfController.selectedObject.x0) || 0)) * pdfController.zoomLevel)
+                height: Math.max(8, (((pdfController.selectedObject && pdfController.selectedObject.y1) || 0) - ((pdfController.selectedObject && pdfController.selectedObject.y0) || 0)) * pdfController.zoomLevel)
+                color: Theme.brandPrimary
+                opacity: 0.15
+                border.color: Theme.brandPrimary
+                border.width: 1.5
+
+                // 8 Control Handles: corners and edge midpoints
+                Repeater {
+                    model: [
+                        { rx: 0, ry: 0 },
+                        { rx: 0.5, ry: 0 },
+                        { rx: 1.0, ry: 0 },
+                        { rx: 0, ry: 0.5 },
+                        { rx: 1.0, ry: 0.5 },
+                        { rx: 0, ry: 1.0 },
+                        { rx: 0.5, ry: 1.0 },
+                        { rx: 1.0, ry: 1.0 }
+                    ]
+
+                    Rectangle {
+                        width: 7
+                        height: 7
+                        x: parent.width * modelData.rx - width / 2
+                        y: parent.height * modelData.ry - height / 2
+                        color: "#FFFFFF"
+                        border.color: Theme.brandPrimary
+                        border.width: 1.5
+                        radius: 1
+                    }
+                }
             }
 
             // Digital Signature Field Overlays
@@ -107,6 +319,7 @@ ListView {
 
                 Rectangle {
                     id: sigOverlayCont
+                    z: 35
                     x: (modelData.normRect && modelData.normRect.length === 4) ? modelData.normRect[0] * pageImage.width : 0
                     y: (modelData.normRect && modelData.normRect.length === 4) ? modelData.normRect[1] * pageImage.height : 0
                     width: (modelData.normRect && modelData.normRect.length === 4) ? modelData.normRect[2] * pageImage.width : 0
@@ -166,11 +379,13 @@ ListView {
                 }
             }
 
-            // Interactive markup canvas overlay
+            // Interactive markup canvas overlay (Ink)
             Canvas {
                 id: markupCanvas
                 anchors.fill: pageImage
+                z: 22
                 visible: ribbonController.activeTool === "ink"
+                enabled: ribbonController.activeTool === "ink"
 
                 property var currentStroke: []
 
@@ -194,6 +409,8 @@ ListView {
                 MouseArea {
                     anchors.fill: parent
                     enabled: ribbonController.activeTool === "ink"
+                    visible: enabled
+                    hoverEnabled: true
                     cursorShape: Qt.CrossCursor
 
                     onPressed: (mouse) => {
@@ -208,7 +425,6 @@ ListView {
 
                     onReleased: {
                         if (markupCanvas.currentStroke.length >= 2) {
-                            // Normalize stroke coordinates back to PDF points
                             var normStroke = []
                             for (var i = 0; i < markupCanvas.currentStroke.length; i++) {
                                 normStroke.push([
@@ -224,10 +440,15 @@ ListView {
                 }
             }
 
-            // Text Placement / Sticky Note placement mouse area
+            // Text Placement / Sticky Note / Stamp placement mouse area
             MouseArea {
                 anchors.fill: pageImage
-                enabled: ribbonController.activeTool === "note" || ribbonController.activeTool === "stamp_approved"
+                z: 21
+                enabled: ribbonController.activeTool === "note" ||
+                         ribbonController.activeTool === "stamp_approved" ||
+                         ribbonController.activeTool === "stamp_confidential"
+                visible: enabled
+                hoverEnabled: true
                 cursorShape: Qt.CrossCursor
 
                 onClicked: (mouse) => {
@@ -238,8 +459,12 @@ ListView {
                         annotationController.addStickyNote(index, pdfX, pdfY, "Comment Note", appController.developerName)
                         ribbonController.selectTool("select")
                     } else if (ribbonController.activeTool === "stamp_approved") {
-                        var rect = [pdfX - 60, pdfY - 20, pdfX + 60, pdfY + 20]
-                        annotationController.addStamp(index, rect, "APPROVED")
+                        var rectA = [pdfX - 60, pdfY - 20, pdfX + 60, pdfY + 20]
+                        annotationController.addStamp(index, rectA, "APPROVED")
+                        ribbonController.selectTool("select")
+                    } else if (ribbonController.activeTool === "stamp_confidential") {
+                        var rectC = [pdfX - 70, pdfY - 20, pdfX + 70, pdfY + 20]
+                        annotationController.addStamp(index, rectC, "CONFIDENTIAL")
                         ribbonController.selectTool("select")
                     }
                 }

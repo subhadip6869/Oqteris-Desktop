@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import "../components"
 import "../themes"
 
 Dialog {
@@ -68,13 +69,13 @@ Dialog {
             }
 
             Row {
-                spacing: 8
-                RadioButton {
+                spacing: 16
+                OqRadioButton {
                     text: "Light"
                     checked: appController.theme === "light"
                     onClicked: appController.setTheme("light")
                 }
-                RadioButton {
+                OqRadioButton {
                     text: "Dark"
                     checked: appController.theme === "dark"
                     onClicked: appController.setTheme("dark")
@@ -158,8 +159,9 @@ Dialog {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 12
 
-            Button {
+            OqButton {
                 text: "Save & Close"
+                isPrimary: true
                 onClicked: {
                     settingsController.defaultAuthor = authorInput.text
                     settingsController.tesseractPath = tessInput.text
@@ -167,7 +169,7 @@ Dialog {
                 }
             }
 
-            Button {
+            OqButton {
                 text: "Cancel"
                 onClicked: root.close()
             }

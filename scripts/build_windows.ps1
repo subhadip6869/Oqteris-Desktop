@@ -28,7 +28,7 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-$setupExe = "dist/Oqteris-1.0.0-Windows-x64-Setup.exe"
+$setupExe = "dist/Oqteris-1.2.0-Windows-x64-Setup.exe"
 if (-not (Test-Path $setupExe)) {
     Write-Error "Expected installer not found at $setupExe"
     exit 1

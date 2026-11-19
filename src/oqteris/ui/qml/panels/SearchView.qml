@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import "../components"
 import "../themes"
 
 Item {
@@ -71,11 +72,11 @@ Item {
                     color: clearBtnMouse.containsMouse ? Theme.buttonHover : "transparent"
                     anchors.verticalCenter: parent.verticalCenter
 
-                    Text {
+                    OqIcon {
                         anchors.centerIn: parent
-                        text: "✕"
-                        font.pixelSize: 11
-                        color: Theme.textSecondary
+                        name: "close"
+                        size: 12
+                        color: clearBtnMouse.containsMouse ? Theme.textPrimary : Theme.textSecondary
                     }
 
                     MouseArea {
@@ -94,11 +95,9 @@ Item {
 
         Row {
             spacing: 8
-            CheckBox {
+            OqCheckBox {
                 id: caseCheck
                 text: "Match Case"
-                font.pixelSize: Theme.fontSizeSmall
-                font.family: Theme.fontFamily
             }
         }
 

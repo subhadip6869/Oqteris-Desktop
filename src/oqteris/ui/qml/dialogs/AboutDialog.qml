@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import "../components"
 import "../themes"
 
 Dialog {
@@ -102,10 +103,23 @@ Dialog {
             anchors.horizontalCenter: parent.horizontalCenter
         }
 
-        Button {
-            text: "Close"
+        Row {
             anchors.horizontalCenter: parent.horizontalCenter
-            onClicked: root.close()
+            spacing: 12
+
+            OqButton {
+                text: "Check for Updates"
+                onClicked: {
+                    root.close()
+                    updateDialogLoader.openUpdateDialog()
+                }
+            }
+
+            OqButton {
+                text: "Close"
+                isPrimary: true
+                onClicked: root.close()
+            }
         }
     }
 }

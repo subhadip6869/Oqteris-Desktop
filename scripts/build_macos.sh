@@ -19,7 +19,7 @@ mkdir -p "$STAGING_DIR"
 cp -R dist/Oqteris.app "$STAGING_DIR/"
 ln -s /Applications "$STAGING_DIR/Applications"
 
-DMG_OUTPUT="dist/Oqteris-1.0.0-macOS-arm64.dmg"
+DMG_OUTPUT="dist/Oqteris-1.2.0-macOS-arm64.dmg"
 rm -f "$DMG_OUTPUT"
 
 echo "==> Creating macOS DMG installer with hdiutil..."

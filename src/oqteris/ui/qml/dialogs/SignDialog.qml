@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import "../components"
 import "../themes"
 
 Dialog {
@@ -50,7 +51,7 @@ Dialog {
                         color: Theme.textPrimary
                     }
                 }
-                Button {
+                OqButton {
                     text: "Browse"
                     height: 28
                     onClicked: fileDialogLoader.openCertificate()
@@ -124,7 +125,7 @@ Dialog {
                         color: Theme.textPrimary
                     }
                 }
-                Button {
+                OqButton {
                     text: "Browse"
                     height: 28
                     onClicked: fileDialogLoader.saveSignedFileAs()
@@ -136,8 +137,9 @@ Dialog {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 12
 
-            Button {
+            OqButton {
                 text: "Sign Document"
+                isPrimary: true
                 onClicked: {
                     if (certPathInput.text && outPathInput.text) {
                         signatureController.signDocument(
@@ -154,7 +156,7 @@ Dialog {
                 }
             }
 
-            Button {
+            OqButton {
                 text: "Cancel"
                 onClicked: root.close()
             }

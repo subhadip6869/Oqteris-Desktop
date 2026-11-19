@@ -13,7 +13,7 @@ Row {
 
         OqRibbonButton {
             text: "Continuous"
-            iconSymbol: "📜"
+            iconName: "continuous"
             tooltipText: "Continuous Scrolling Mode"
             isChecked: pdfController.displayMode === "continuous"
             enabled: pdfController.hasDocument
@@ -22,7 +22,7 @@ Row {
 
         OqRibbonButton {
             text: "Single Page"
-            iconSymbol: "📄"
+            iconName: "single-page"
             tooltipText: "Single Page Display"
             isChecked: pdfController.displayMode === "single"
             enabled: pdfController.hasDocument
@@ -36,7 +36,7 @@ Row {
 
         OqRibbonButton {
             text: "Thumbnails"
-            iconSymbol: "🖼"
+            iconName: "thumbnails"
             tooltipText: "Page Thumbnails Panel"
             isChecked: mainPanelState.showLeftPanel && mainPanelState.currentPanelTab === "thumbnails"
             onClicked: mainPanelState.togglePanel("thumbnails")
@@ -44,7 +44,7 @@ Row {
 
         OqRibbonButton {
             text: "Bookmarks"
-            iconSymbol: "📑"
+            iconName: "bookmarks"
             tooltipText: "Document Bookmarks"
             isChecked: mainPanelState.showLeftPanel && mainPanelState.currentPanelTab === "bookmarks"
             onClicked: mainPanelState.togglePanel("bookmarks")
@@ -52,7 +52,7 @@ Row {
 
         OqRibbonButton {
             text: "Annotations"
-            iconSymbol: "💬"
+            iconName: "annotations"
             tooltipText: "Comments & Annotations"
             isChecked: mainPanelState.showLeftPanel && mainPanelState.currentPanelTab === "annotations"
             onClicked: mainPanelState.togglePanel("annotations")
@@ -60,7 +60,7 @@ Row {
 
         OqRibbonButton {
             text: "Signatures"
-            iconSymbol: "🔏"
+            iconName: "signatures"
             tooltipText: "Digital Signatures List"
             isChecked: mainPanelState.showLeftPanel && mainPanelState.currentPanelTab === "signatures"
             onClicked: {
@@ -71,7 +71,7 @@ Row {
 
         OqRibbonButton {
             text: "Properties"
-            iconSymbol: "ℹ"
+            iconName: "properties"
             tooltipText: "Document Properties"
             isChecked: mainPanelState.showRightPanel
             onClicked: mainPanelState.showRightPanel = !mainPanelState.showRightPanel
@@ -84,7 +84,7 @@ Row {
 
         OqRibbonButton {
             text: "Search"
-            iconSymbol: "🔎"
+            iconName: "find"
             tooltipText: "Find Text in Document"
             shortcutText: "Ctrl+F"
             enabled: pdfController.hasDocument
@@ -92,6 +92,18 @@ Row {
                 mainPanelState.showLeftPanel = true
                 mainPanelState.currentPanelTab = "search"
             }
+        }
+    }
+
+    // Group 4: Theme & Appearance (Moved here from Help as requested)
+    OqRibbonGroup {
+        title: "Theme"
+
+        OqRibbonButton {
+            text: appController.isDarkMode ? "Light\nMode" : "Dark\nMode"
+            iconName: appController.isDarkMode ? "theme-light" : "theme-dark"
+            tooltipText: "Toggle Light / Dark Theme"
+            onClicked: appController.toggleTheme()
         }
     }
 }

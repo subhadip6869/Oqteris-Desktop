@@ -35,7 +35,7 @@ Packaged artifacts will be located under `dist/Oqteris.dist/` (Windows/Linux) or
 
 ### Inno Setup Installer
 
-To produce a single-file executable installer (`Oqteris-1.0.0-Windows-x64-Setup.exe`):
+To produce a single-file executable installer (`Oqteris-X.X.X-Windows-x64-Setup.exe`):
 
 1. Package the standalone distribution via `python scripts/build_pyinstaller.py` or `powershell ./scripts/build_windows.ps1`.
 2. Install [Inno Setup 6](https://jrsoftware.org/isdl.php).
@@ -84,5 +84,5 @@ Nuitka produces an application bundle `dist/Oqteris.app`.
 To package into a distributable DMG:
 
 ```bash
-hdiutil create -volname "Oqteris" -srcfolder dist/Oqteris.app -ov -format UDZO dist/Oqteris-1.0.0-macOS.dmg
+hdiutil create -volname "Oqteris" -srcfolder dist/Oqteris.app -ov -format UDZO dist/Oqteris-X.X.X-macOS.dmg
 ```

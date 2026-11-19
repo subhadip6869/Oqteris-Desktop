@@ -9,7 +9,7 @@ from pathlib import Path
 APP_NAME: str = "Oqteris"
 APP_DISPLAY_NAME: str = "Oqteris PDF Editor"
 APP_DESCRIPTION: str = "Complete Cross-Platform PDF Reader and Editor"
-APP_VERSION: str = "1.0.0"
+APP_VERSION: str = "1.2.0"
 APP_IDENTIFIER: str = "app.vercel.originsd.oqteris"
 
 # Organization & Developer
