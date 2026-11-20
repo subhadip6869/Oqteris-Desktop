@@ -30,6 +30,15 @@ WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64
 ChangesAssociations=yes
 
+; In-place Update & Upgrade Behavior
+UsePreviousAppDir=yes
+UsePreviousGroup=yes
+UsePreviousTasks=yes
+UpdateUninstallLogAppName=yes
+CloseApplications=yes
+RestartApplications=yes
+CloseApplicationsFilter=*.exe
+
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 

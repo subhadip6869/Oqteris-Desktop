@@ -113,3 +113,36 @@ def test_update_controller_check_up_to_date(qapp):
         controller._check_worker()
 
     assert controller.status == "up_to_date"
+
+
+def test_update_controller_platform_asset_discovery(qapp):
+    controller = UpdateController()
+    fake_release = {
+        "tag_name": "v1.3.0",
+        "name": "Oqteris v1.3.0",
+        "assets": [
+            {"name": "Oqteris-1.3.0-Windows-x64-Setup.exe", "browser_download_url": "https://example.com/win.exe", "size": 100},
+            {"name": "Oqteris-1.3.0-macOS-arm64.dmg", "browser_download_url": "https://example.com/mac.dmg", "size": 200},
+            {"name": "Oqteris-1.3.0-Linux-x64.deb", "browser_download_url": "https://example.com/linux.deb", "size": 300},
+            {"name": "Oqteris-1.3.0-Linux-x64.rpm", "browser_download_url": "https://example.com/linux.rpm", "size": 400},
+        ],
+    }
+
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = json.dumps(fake_release).encode("utf-8")
+    mock_resp.__enter__.return_value = mock_resp
+
+    # Test macOS picks .dmg
+    with patch("urllib.request.urlopen", return_value=mock_resp), patch("platform.system", return_value="Darwin"):
+        controller._check_worker()
+    assert controller.assetName == "Oqteris-1.3.0-macOS-arm64.dmg"
+
+    # Test Linux picks .deb
+    with patch("urllib.request.urlopen", return_value=mock_resp), patch("platform.system", return_value="Linux"), patch("pathlib.Path.exists", return_value=True):
+        controller._check_worker()
+    assert controller.assetName == "Oqteris-1.3.0-Linux-x64.deb"
+
+    # Test Windows picks .exe
+    with patch("urllib.request.urlopen", return_value=mock_resp), patch("platform.system", return_value="Windows"):
+        controller._check_worker()
+    assert controller.assetName == "Oqteris-1.3.0-Windows-x64-Setup.exe"

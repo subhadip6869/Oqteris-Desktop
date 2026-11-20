@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import platform
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -207,21 +208,52 @@ class UpdateController(QObject):
                 self._release_date = raw_date
             self._release_url = data.get("html_url", REPOSITORY_URL)
 
-            # Discover asset appropriate for OS
+            # Discover asset appropriate for host operating system
             assets = data.get("assets", [])
             chosen_asset: Optional[dict[str, Any]] = None
+            sys_name = platform.system()
 
-            # Prioritize matching Windows asset (.exe / .msi)
-            for a in assets:
-                name = a.get("name", "").lower()
-                if name.endswith(".exe") or name.endswith(".msi"):
-                    chosen_asset = a
-                    break
+            if sys_name == "Windows":
+                for a in assets:
+                    name = a.get("name", "").lower()
+                    if name.endswith(".exe") or name.endswith(".msi"):
+                        chosen_asset = a
+                        break
+            elif sys_name == "Darwin":
+                for a in assets:
+                    name = a.get("name", "").lower()
+                    if name.endswith(".dmg") or name.endswith(".pkg"):
+                        chosen_asset = a
+                        break
+            elif sys_name == "Linux":
+                is_debian = Path("/etc/debian_version").exists() or shutil.which("dpkg") is not None
+                is_fedora = (
+                    Path("/etc/fedora-release").exists()
+                    or Path("/etc/redhat-release").exists()
+                    or shutil.which("rpm") is not None
+                )
+                if is_debian:
+                    for a in assets:
+                        if a.get("name", "").lower().endswith(".deb"):
+                            chosen_asset = a
+                            break
+                elif is_fedora:
+                    for a in assets:
+                        if a.get("name", "").lower().endswith(".rpm"):
+                            chosen_asset = a
+                            break
+                if not chosen_asset:
+                    for a in assets:
+                        name = a.get("name", "").lower()
+                        if name.endswith(".deb") or name.endswith(".rpm"):
+                            chosen_asset = a
+                            break
 
+            # Fallback for any OS
             if not chosen_asset:
                 for a in assets:
                     name = a.get("name", "").lower()
-                    if name.endswith(".zip"):
+                    if name.endswith(".zip") or name.endswith(".tar.gz"):
                         chosen_asset = a
                         break
 
@@ -391,7 +423,8 @@ class UpdateController(QObject):
 
         try:
             logger.info("Executing installer: %s", file_str)
-            if platform.system() == "Windows":
+            sys_name = platform.system()
+            if sys_name == "Windows":
                 if ext in (".exe", ".msi"):
                     # Launch detached installer process
                     flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
@@ -406,8 +439,15 @@ class UpdateController(QObject):
                 else:
                     os.startfile(file_str)
                     return True
+            elif sys_name == "Darwin":
+                # On macOS, use 'open' to mount the DMG or run .pkg installer
+                subprocess.Popen(["open", file_str])
+                QCoreApplication.quit()
+                return True
             else:
+                # Linux: launch native package installer via xdg-open
                 subprocess.Popen(["xdg-open", file_str])
+                QCoreApplication.quit()
                 return True
         except Exception as e:
             logger.error("Failed to run installer %s: %s", file_str, e)
